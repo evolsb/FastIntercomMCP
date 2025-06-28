@@ -118,7 +118,9 @@ class TestDatabaseInitialization:
             cursor = conn.execute("SELECT MAX(version) FROM schema_version")
             current_version = cursor.fetchone()[0]
 
-            assert current_version == 2, f"Expected schema version 2, got {current_version}"
+            assert current_version == 2, (
+                f"Expected schema version 2, got {current_version}"
+            )
 
     def test_foreign_keys_enabled(self, test_db_manager):
         """Test that foreign key constraints are enabled."""
@@ -137,15 +139,22 @@ class TestDatabaseInitialization:
         assert db_manager.pool_size == 5
 
         # Invalid pool sizes should raise ValueError
-        with pytest.raises(ValueError, match="Database pool size must be between 1 and 20"):
+        with pytest.raises(
+            ValueError, match="Database pool size must be between 1 and 20"
+        ):
             DatabaseManager(db_path=temp_db_path, pool_size=0)
 
-        with pytest.raises(ValueError, match="Database pool size must be between 1 and 20"):
+        with pytest.raises(
+            ValueError, match="Database pool size must be between 1 and 20"
+        ):
             DatabaseManager(db_path=temp_db_path, pool_size=25)
 
     def test_default_database_path(self):
         """Test that default database path is created correctly."""
-        with tempfile.TemporaryDirectory() as temp_dir, patch("pathlib.Path.home") as mock_home:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            patch("pathlib.Path.home") as mock_home,
+        ):
             mock_home.return_value = Path(temp_dir)
 
             # Create the database manager with default path
@@ -166,11 +175,17 @@ class TestDatabaseOperations:
         """Test storing and retrieving conversations."""
         # Create test data
         message1 = Message(
-            id="msg1", author_type="user", body="Hello, I need help", created_at=datetime.now()
+            id="msg1",
+            author_type="user",
+            body="Hello, I need help",
+            created_at=datetime.now(),
         )
 
         message2 = Message(
-            id="msg2", author_type="admin", body="How can I help you?", created_at=datetime.now()
+            id="msg2",
+            author_type="admin",
+            body="How can I help you?",
+            created_at=datetime.now(),
         )
 
         conversation = Conversation(
@@ -211,11 +226,17 @@ class TestDatabaseOperations:
 
         # Add some test data
         message = Message(
-            id="msg1", author_type="user", body="Test message", created_at=datetime.now()
+            id="msg1",
+            author_type="user",
+            body="Test message",
+            created_at=datetime.now(),
         )
 
         conversation = Conversation(
-            id="conv1", created_at=datetime.now(), updated_at=datetime.now(), messages=[message]
+            id="conv1",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            messages=[message],
         )
 
         test_db_manager.store_conversations([conversation])
@@ -233,7 +254,9 @@ class TestDatabaseOperations:
         end_time = now - timedelta(hours=1)
 
         # No data initially
-        freshness = test_db_manager.get_data_freshness_for_timeframe(start_time, end_time)
+        freshness = test_db_manager.get_data_freshness_for_timeframe(
+            start_time, end_time
+        )
         assert freshness == 0
 
         # Add conversation in timeframe
@@ -254,7 +277,9 @@ class TestDatabaseOperations:
         test_db_manager.store_conversations([conversation])
 
         # Check freshness again - should return an integer (can be negative due to timing)
-        freshness = test_db_manager.get_data_freshness_for_timeframe(start_time, end_time)
+        freshness = test_db_manager.get_data_freshness_for_timeframe(
+            start_time, end_time
+        )
         assert isinstance(freshness, int), "Freshness should be an integer value"
 
 
@@ -268,7 +293,10 @@ class TestDatabaseTransaction:
 
         # Create valid conversation
         valid_message = Message(
-            id="valid_msg", author_type="user", body="Valid message", created_at=datetime.now()
+            id="valid_msg",
+            author_type="user",
+            body="Valid message",
+            created_at=datetime.now(),
         )
 
         valid_conversation = Conversation(
@@ -282,17 +310,26 @@ class TestDatabaseTransaction:
         test_db_manager.store_conversations([valid_conversation])
 
         # Verify it was stored
-        assert test_db_manager.get_sync_status()["total_conversations"] == initial_count + 1
+        assert (
+            test_db_manager.get_sync_status()["total_conversations"]
+            == initial_count + 1
+        )
 
     def test_duplicate_conversation_handling(self, test_db_manager):
         """Test that duplicate conversations are handled correctly."""
         # Create conversation
         message = Message(
-            id="msg1", author_type="user", body="Original message", created_at=datetime.now()
+            id="msg1",
+            author_type="user",
+            body="Original message",
+            created_at=datetime.now(),
         )
 
         conversation = Conversation(
-            id="conv1", created_at=datetime.now(), updated_at=datetime.now(), messages=[message]
+            id="conv1",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            messages=[message],
         )
 
         # Store conversation twice

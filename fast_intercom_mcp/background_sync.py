@@ -86,8 +86,10 @@ class BackgroundSyncService:
                 )
 
                 # Use IntercomClient directly to avoid sync service conflicts
-                conversations = await self.intercom_client.fetch_conversations_for_period(
-                    start_date, end_date
+                conversations = (
+                    await self.intercom_client.fetch_conversations_for_period(
+                        start_date, end_date
+                    )
                 )
                 stored_count = self.db.store_conversations(conversations)
 

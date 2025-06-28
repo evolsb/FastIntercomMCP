@@ -146,7 +146,11 @@ class IntercomClient:
         async with httpx.AsyncClient(timeout=self.timeout):
             # Build search filters
             search_filters = [
-                {"field": "updated_at", "operator": ">", "value": int(since_timestamp.timestamp())}
+                {
+                    "field": "updated_at",
+                    "operator": ">",
+                    "value": int(since_timestamp.timestamp()),
+                }
             ]
 
             if until_timestamp:
@@ -218,14 +222,17 @@ class IntercomClient:
         return SyncStats(
             total_conversations=len(conversations),
             new_conversations=len(conversations),  # All are new in incremental
-            updated_conversations=0,  # None are updated in incremental 
+            updated_conversations=0,  # None are updated in incremental
             total_messages=sum(len(conv.messages) for conv in conversations),
             duration_seconds=elapsed_time,
-            api_calls_made=api_calls
+            api_calls_made=api_calls,
         )
 
     async def fetch_conversations_for_period(
-        self, start_date: datetime, end_date: datetime, progress_callback: Callable | None = None
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        progress_callback: Callable | None = None,
     ) -> list[Conversation]:
         """Fetch all conversations for a specific time period.
 
@@ -242,8 +249,16 @@ class IntercomClient:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             # Use updated_at to capture both new conversations AND existing conversations with new messages
             search_filters = [
-                {"field": "updated_at", "operator": ">", "value": int(start_date.timestamp())},
-                {"field": "updated_at", "operator": "<", "value": int(end_date.timestamp())},
+                {
+                    "field": "updated_at",
+                    "operator": ">",
+                    "value": int(start_date.timestamp()),
+                },
+                {
+                    "field": "updated_at",
+                    "operator": "<",
+                    "value": int(end_date.timestamp()),
+                },
             ]
 
             # Paginate through results
@@ -260,7 +275,9 @@ class IntercomClient:
                 }
 
                 response = await client.post(
-                    f"{self.base_url}/conversations/search", headers=self.headers, json=request_body
+                    f"{self.base_url}/conversations/search",
+                    headers=self.headers,
+                    json=request_body,
                 )
                 response.raise_for_status()
 
@@ -312,7 +329,9 @@ class IntercomClient:
                         continue
 
                     author_type = (
-                        "admin" if part.get("author", {}).get("type") == "admin" else "user"
+                        "admin"
+                        if part.get("author", {}).get("type") == "admin"
+                        else "user"
                     )
 
                     if author_type == "user":
@@ -322,7 +341,9 @@ class IntercomClient:
                         id=str(part.get("id", "unknown")),
                         author_type=author_type,
                         body=part.get("body", ""),
-                        created_at=datetime.fromtimestamp(part.get("created_at", 0), tz=UTC),
+                        created_at=datetime.fromtimestamp(
+                            part.get("created_at", 0), tz=UTC
+                        ),
                         part_type=part.get("part_type"),
                     )
                     messages.append(message)
@@ -378,10 +399,14 @@ class IntercomClient:
             )
 
         except Exception as e:
-            logger.warning(f"Failed to parse conversation {conv_data.get('id', 'unknown')}: {e}")
+            logger.warning(
+                f"Failed to parse conversation {conv_data.get('id', 'unknown')}: {e}"
+            )
             return None
 
-    async def fetch_individual_conversation(self, conversation_id: str) -> Conversation | None:
+    async def fetch_individual_conversation(
+        self, conversation_id: str
+    ) -> Conversation | None:
         """Fetch a complete conversation thread with all messages.
 
         Args:
@@ -468,7 +493,9 @@ class IntercomClient:
                         continue
 
                     author_type = (
-                        "admin" if part.get("author", {}).get("type") == "admin" else "user"
+                        "admin"
+                        if part.get("author", {}).get("type") == "admin"
+                        else "user"
                     )
 
                     if author_type == "user":
@@ -478,7 +505,9 @@ class IntercomClient:
                         id=str(part.get("id", "unknown")),
                         author_type=author_type,
                         body=part.get("body", ""),
-                        created_at=datetime.fromtimestamp(part.get("created_at", 0), tz=UTC),
+                        created_at=datetime.fromtimestamp(
+                            part.get("created_at", 0), tz=UTC
+                        ),
                         part_type=part.get("part_type"),
                     )
                     messages.append(message)
@@ -560,7 +589,10 @@ class IntercomClient:
         return self._parse_individual_conversation(conv_data)
 
     async def get_conversation_messages(
-        self, conversation_id: str, per_page: int = 20, starting_after: str | None = None
+        self,
+        conversation_id: str,
+        per_page: int = 20,
+        starting_after: str | None = None,
     ) -> tuple[list[Message], str | None]:
         """Fetch messages for a conversation with pagination.
 
@@ -604,13 +636,17 @@ class IntercomClient:
                 # Get next cursor for pagination
                 pages = data.get("pages", {})
                 next_cursor = (
-                    pages.get("next", {}).get("starting_after") if pages.get("next") else None
+                    pages.get("next", {}).get("starting_after")
+                    if pages.get("next")
+                    else None
                 )
 
                 return messages, next_cursor
 
         except Exception as e:
-            logger.error(f"Failed to fetch messages for conversation {conversation_id}: {e}")
+            logger.error(
+                f"Failed to fetch messages for conversation {conversation_id}: {e}"
+            )
             return [], None
 
     def _parse_message_from_part(self, part: dict) -> Message | None:
@@ -626,7 +662,9 @@ class IntercomClient:
             if not part.get("body"):
                 return None
 
-            author_type = "admin" if part.get("author", {}).get("type") == "admin" else "user"
+            author_type = (
+                "admin" if part.get("author", {}).get("type") == "admin" else "user"
+            )
 
             return Message(
                 id=str(part.get("id", "unknown")),
@@ -640,7 +678,9 @@ class IntercomClient:
             logger.warning(f"Failed to parse message part: {e}")
             return None
 
-    async def fetch_complete_conversation_thread(self, conversation_id: str) -> Conversation | None:
+    async def fetch_complete_conversation_thread(
+        self, conversation_id: str
+    ) -> Conversation | None:
         """Fetch a complete conversation with all messages using pagination.
 
         Args:
@@ -676,7 +716,9 @@ class IntercomClient:
         """Test if the API connection is working."""
         try:
             # Use optimized request for connection test
-            await self._make_optimized_request("GET", f"{self.base_url}/me", priority="high")
+            await self._make_optimized_request(
+                "GET", f"{self.base_url}/me", priority="high"
+            )
             return True
         except Exception as e:
             logger.error(f"Connection test failed: {e}")
@@ -718,11 +760,17 @@ class IntercomClient:
             "efficiency_percentage", 100
         )
         if current_efficiency < 70:
-            recommendations.append("API efficiency is low - consider reducing concurrent requests")
+            recommendations.append(
+                "API efficiency is low - consider reducing concurrent requests"
+            )
 
-        cache_hit_ratio = optimization_stats.get("performance", {}).get("cache_hit_ratio", 0)
+        cache_hit_ratio = optimization_stats.get("performance", {}).get(
+            "cache_hit_ratio", 0
+        )
         if cache_hit_ratio < 0.2:
-            recommendations.append("Low cache usage - verify cache keys and TTL settings")
+            recommendations.append(
+                "Low cache usage - verify cache keys and TTL settings"
+            )
 
         return recommendations
 

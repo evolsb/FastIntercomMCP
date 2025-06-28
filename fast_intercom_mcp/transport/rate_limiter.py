@@ -162,7 +162,9 @@ class AdaptiveRateLimiter:
         with self._lock:
             # Reset consecutive rate limits on success
             if self._consecutive_rate_limits > 0:
-                logger.info(f"Rate limit cleared after {self._consecutive_rate_limits} hits")
+                logger.info(
+                    f"Rate limit cleared after {self._consecutive_rate_limits} hits"
+                )
                 self._consecutive_rate_limits = 0
                 self._current_backoff_seconds = self.config.min_backoff_seconds
 
@@ -188,7 +190,9 @@ class AdaptiveRateLimiter:
 
         # Clean burst window
         burst_cutoff_time = now - self.config.burst_window_seconds
-        self._burst_request_times = [t for t in self._burst_request_times if t > burst_cutoff_time]
+        self._burst_request_times = [
+            t for t in self._burst_request_times if t > burst_cutoff_time
+        ]
 
     def _calculate_delay(self, now: float, priority: str) -> float:
         """Calculate required delay before next request."""
@@ -218,7 +222,9 @@ class AdaptiveRateLimiter:
             and self._last_rate_limit_time
             and now - self._last_rate_limit_time < self._current_backoff_seconds
         ):
-            remaining_backoff = self._current_backoff_seconds - (now - self._last_rate_limit_time)
+            remaining_backoff = self._current_backoff_seconds - (
+                now - self._last_rate_limit_time
+            )
             return max(0, remaining_backoff)
 
         # Priority-based minimum intervals
@@ -278,7 +284,8 @@ class AdaptiveRateLimiter:
         """Check if we should perform adaptive adjustment."""
         return (
             self.config.adaptive_enabled
-            and time.time() - self._last_adaptive_adjustment > self._adaptive_adjustment_interval
+            and time.time() - self._last_adaptive_adjustment
+            > self._adaptive_adjustment_interval
         )
 
     def _adapt_rate_limits(self):
@@ -294,9 +301,14 @@ class AdaptiveRateLimiter:
             # If we're consistently able to make requests faster than our limit,
             # we might be able to increase the rate
             theoretical_max_rate = 1.0 / avg_interval
-            current_max_rate = self.config.max_requests_per_window / self.config.window_seconds
+            current_max_rate = (
+                self.config.max_requests_per_window / self.config.window_seconds
+            )
 
-            if theoretical_max_rate > current_max_rate * 1.2 and self._consecutive_rate_limits == 0:
+            if (
+                theoretical_max_rate > current_max_rate * 1.2
+                and self._consecutive_rate_limits == 0
+            ):
                 # Increase rate limit cautiously
                 new_max = min(
                     self.config.max_requests_per_window + 5,
@@ -326,7 +338,9 @@ class AdaptiveRateLimiter:
         if len(self._request_times) >= 2:
             time_span = self._request_times[-1] - self._request_times[0]
             if time_span > 0:
-                self.metrics.current_rate_per_second = len(self._request_times) / time_span
+                self.metrics.current_rate_per_second = (
+                    len(self._request_times) / time_span
+                )
 
         # Calculate average interval
         if len(self._request_times) >= 2:
@@ -343,12 +357,16 @@ class AdaptiveRateLimiter:
             # Calculate efficiency metrics
             efficiency = 1.0
             if self.metrics.total_requests > 0:
-                efficiency = 1.0 - (self.metrics.requests_delayed / self.metrics.total_requests)
+                efficiency = 1.0 - (
+                    self.metrics.requests_delayed / self.metrics.total_requests
+                )
 
             # Calculate average delay
             avg_delay = 0.0
             if self.metrics.requests_delayed > 0:
-                avg_delay = self.metrics.total_delay_seconds / self.metrics.requests_delayed
+                avg_delay = (
+                    self.metrics.total_delay_seconds / self.metrics.requests_delayed
+                )
 
             return {
                 "config": {
@@ -362,7 +380,9 @@ class AdaptiveRateLimiter:
                     "requests_in_burst_window": len(self._burst_request_times),
                     "consecutive_rate_limits": self._consecutive_rate_limits,
                     "current_backoff_seconds": self._current_backoff_seconds,
-                    "current_rate_per_second": round(self.metrics.current_rate_per_second, 2),
+                    "current_rate_per_second": round(
+                        self.metrics.current_rate_per_second, 2
+                    ),
                 },
                 "performance": {
                     "total_requests": self.metrics.total_requests,
@@ -381,10 +401,14 @@ class AdaptiveRateLimiter:
 
         efficiency = 1.0
         if self.metrics.total_requests > 0:
-            efficiency = 1.0 - (self.metrics.requests_delayed / self.metrics.total_requests)
+            efficiency = 1.0 - (
+                self.metrics.requests_delayed / self.metrics.total_requests
+            )
 
         if efficiency < 0.8:
-            recommendations.append("Low efficiency detected - consider reducing request rate")
+            recommendations.append(
+                "Low efficiency detected - consider reducing request rate"
+            )
 
         if self._consecutive_rate_limits > 5:
             recommendations.append("Frequent rate limits - API limits may have changed")
@@ -393,7 +417,9 @@ class AdaptiveRateLimiter:
             recommendations.append("High request rate - monitor for rate limit hits")
 
         if len(self._request_times) == self.config.max_requests_per_window:
-            recommendations.append("Operating at rate limit capacity - consider request batching")
+            recommendations.append(
+                "Operating at rate limit capacity - consider request batching"
+            )
 
         return recommendations
 

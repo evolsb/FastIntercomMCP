@@ -24,7 +24,9 @@ class DatabaseManager:
             pool_size: Number of connections to maintain in the pool (max 20)
         """
         if pool_size < 1 or pool_size > 20:
-            raise ValueError(f"Database pool size must be between 1 and 20, got {pool_size}")
+            raise ValueError(
+                f"Database pool size must be between 1 and 20, got {pool_size}"
+            )
 
         self.pool_size = pool_size
         if db_path is None:
@@ -337,7 +339,9 @@ class DatabaseManager:
             # Rename all existing tables with backup suffix
             for table in tables:
                 try:
-                    conn.execute(f"ALTER TABLE {table} RENAME TO {table}_backup_{backup_suffix}")
+                    conn.execute(
+                        f"ALTER TABLE {table} RENAME TO {table}_backup_{backup_suffix}"
+                    )
                 except sqlite3.OperationalError as e:
                     logger.warning(f"Could not backup table {table}: {e}")
 
@@ -402,7 +406,9 @@ class DatabaseManager:
                         )
 
                         # Delete old messages and insert new ones
-                        conn.execute("DELETE FROM messages WHERE conversation_id = ?", (conv.id,))
+                        conn.execute(
+                            "DELETE FROM messages WHERE conversation_id = ?", (conv.id,)
+                        )
                         self._store_messages(conn, conv.messages, conv.id)
                         stored_count += 1
                 else:
@@ -571,7 +577,9 @@ class DatabaseManager:
                 FROM conversations
             """)
             last_sync_row = cursor.fetchone()
-            last_sync = last_sync_row["last_sync"] if last_sync_row["last_sync"] else None
+            last_sync = (
+                last_sync_row["last_sync"] if last_sync_row["last_sync"] else None
+            )
 
             # Get recent sync activity
             cursor = conn.execute("""
@@ -633,7 +641,9 @@ class DatabaseManager:
             conn.commit()
             return cursor.lastrowid
 
-    def get_periods_needing_sync(self, max_age_minutes: int = 5) -> list[tuple[datetime, datetime]]:
+    def get_periods_needing_sync(
+        self, max_age_minutes: int = 5
+    ) -> list[tuple[datetime, datetime]]:
         """Get time periods that need syncing based on last sync time.
 
         Args:
@@ -642,7 +652,9 @@ class DatabaseManager:
         Returns:
             List of (start_time, end_time) tuples that need syncing
         """
-        cutoff_time = datetime.now(UTC).replace(tzinfo=None)  # Remove timezone for SQLite
+        cutoff_time = datetime.now(UTC).replace(
+            tzinfo=None
+        )  # Remove timezone for SQLite
         cutoff_time = cutoff_time.replace(minute=cutoff_time.minute - max_age_minutes)
 
         with sqlite3.connect(self.db_path) as conn:
@@ -715,7 +727,9 @@ class DatabaseManager:
             List of (start_time, end_time) tuples that need refreshing
         """
         cutoff_time = datetime.now()
-        recent_requests_since = cutoff_time - timedelta(hours=1)  # Look at last hour of requests
+        recent_requests_since = cutoff_time - timedelta(
+            hours=1
+        )  # Look at last hour of requests
 
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
@@ -741,7 +755,9 @@ class DatabaseManager:
 
             return timeframes
 
-    def get_data_freshness_for_timeframe(self, start_time: datetime, end_time: datetime) -> int:
+    def get_data_freshness_for_timeframe(
+        self, start_time: datetime, end_time: datetime
+    ) -> int:
         """Calculate how old the data is for a given timeframe.
 
         Args:
@@ -817,9 +833,15 @@ class DatabaseManager:
 
         # If no timeframe specified, check general freshness
         if not start_date or not end_date:
-            recent_threshold = datetime.now() - timedelta(minutes=freshness_threshold_minutes)
+            recent_threshold = datetime.now() - timedelta(
+                minutes=freshness_threshold_minutes
+            )
             if last_sync >= recent_threshold:
-                return {"sync_state": "fresh", "last_sync": last_sync, "data_complete": True}
+                return {
+                    "sync_state": "fresh",
+                    "last_sync": last_sync,
+                    "data_complete": True,
+                }
             return {
                 "sync_state": "partial",
                 "last_sync": last_sync,
@@ -848,7 +870,9 @@ class DatabaseManager:
             }
 
         # State 3: Fresh - last sync recent relative to end time
-        freshness_threshold_dt = end_date - timedelta(minutes=freshness_threshold_minutes)
+        freshness_threshold_dt = end_date - timedelta(
+            minutes=freshness_threshold_minutes
+        )
         if last_sync >= freshness_threshold_dt:
             return {
                 "sync_state": "fresh",
@@ -865,7 +889,9 @@ class DatabaseManager:
             "data_complete": False,
         }
 
-    def get_conversations_needing_thread_sync(self, limit: int = 50) -> list[dict[str, Any]]:
+    def get_conversations_needing_thread_sync(
+        self, limit: int = 50
+    ) -> list[dict[str, Any]]:
         """Get conversations that need complete thread fetching."""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
@@ -881,7 +907,9 @@ class DatabaseManager:
 
             return [dict(row) for row in cursor.fetchall()]
 
-    def get_conversations_needing_incremental_sync(self, limit: int = 50) -> list[dict[str, Any]]:
+    def get_conversations_needing_incremental_sync(
+        self, limit: int = 50
+    ) -> list[dict[str, Any]]:
         """Get conversations that need incremental message updates."""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
@@ -927,12 +955,20 @@ class DatabaseManager:
                  last_sync_attempt, error_message, next_sync_needed)
                 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, FALSE)
             """,
-                (conversation_id, sync_status, thread_complete, total_messages or 0, error_message),
+                (
+                    conversation_id,
+                    sync_status,
+                    thread_complete,
+                    total_messages or 0,
+                    error_message,
+                ),
             )
 
             conn.commit()
 
-    def mark_conversation_for_resync(self, conversation_id: str, reason: str = None) -> None:
+    def mark_conversation_for_resync(
+        self, conversation_id: str, reason: str = None
+    ) -> None:
         """Mark a conversation as needing re-synchronization."""
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
@@ -988,7 +1024,9 @@ class DatabaseManager:
                 FROM conversation_sync_state
                 GROUP BY sync_status
             """)
-            sync_status_breakdown = {row["sync_status"]: row["count"] for row in cursor.fetchall()}
+            sync_status_breakdown = {
+                row["sync_status"]: row["count"] for row in cursor.fetchall()
+            }
 
             # Messages statistics
             cursor = conn.execute("""
@@ -1005,13 +1043,19 @@ class DatabaseManager:
                 "complete_threads": thread_stats["complete"] or 0,
                 "incomplete_threads": thread_stats["incomplete"] or 0,
                 "completion_percentage": round(
-                    (thread_stats["complete"] or 0) / max(total_conversations, 1) * 100, 1
+                    (thread_stats["complete"] or 0) / max(total_conversations, 1) * 100,
+                    1,
                 ),
                 "sync_status_breakdown": sync_status_breakdown,
                 "total_messages": message_stats["total_messages"] or 0,
-                "conversations_with_messages": message_stats["conversations_with_messages"] or 0,
+                "conversations_with_messages": message_stats[
+                    "conversations_with_messages"
+                ]
+                or 0,
                 "average_messages_per_conversation": round(
-                    (message_stats["total_messages"] or 0) / max(total_conversations, 1), 1
+                    (message_stats["total_messages"] or 0)
+                    / max(total_conversations, 1),
+                    1,
                 ),
             }
 

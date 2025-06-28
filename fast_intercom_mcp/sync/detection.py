@@ -37,7 +37,11 @@ class ChangeDetectionResult:
 
     def get_changes_by_type(self, change_type: str) -> list[ConversationChange]:
         """Get changes of a specific type."""
-        return [change for change in self.changes_detected if change.change_type == change_type]
+        return [
+            change
+            for change in self.changes_detected
+            if change.change_type == change_type
+        ]
 
 
 class ConversationChangeDetector:
@@ -48,11 +52,16 @@ class ConversationChangeDetector:
         self.db = database
 
         # Detection thresholds
-        self.message_timestamp_tolerance_seconds = 5  # Allow small timestamp differences
+        self.message_timestamp_tolerance_seconds = (
+            5  # Allow small timestamp differences
+        )
         self.batch_size = 25  # How many conversations to check in one batch
 
     async def detect_changes_in_timeframe(
-        self, start_time: datetime, end_time: datetime, change_types: list[str] | None = None
+        self,
+        start_time: datetime,
+        end_time: datetime,
+        change_types: list[str] | None = None,
     ) -> ChangeDetectionResult:
         """Detect changes in conversations within a specific timeframe.
 
@@ -94,7 +103,9 @@ class ConversationChangeDetector:
                 continue
 
             # Detect specific types of changes
-            conv_changes = self._detect_conversation_changes(local_conv, remote_conv, change_types)
+            conv_changes = self._detect_conversation_changes(
+                local_conv, remote_conv, change_types
+            )
             changes_detected.extend(conv_changes)
 
         detection_duration = (datetime.now() - start_detection).total_seconds()
@@ -130,14 +141,18 @@ class ConversationChangeDetector:
         if change_types is None:
             change_types = ["new_messages", "state_change", "tags_updated"]
 
-        logger.info(f"Detecting changes in {len(conversation_ids)} specific conversations")
+        logger.info(
+            f"Detecting changes in {len(conversation_ids)} specific conversations"
+        )
 
         # Get local versions
         local_conversations = self._get_local_conversations(conversation_ids)
         local_by_id = {conv.id: conv for conv in local_conversations}
 
         # Fetch current versions from Intercom
-        remote_conversations = await self.intercom.fetch_individual_conversations(conversation_ids)
+        remote_conversations = await self.intercom.fetch_individual_conversations(
+            conversation_ids
+        )
 
         changes_detected = []
         api_calls = len(conversation_ids)  # One call per conversation
@@ -149,7 +164,9 @@ class ConversationChangeDetector:
                 # Don't have this conversation locally
                 continue
 
-            conv_changes = self._detect_conversation_changes(local_conv, remote_conv, change_types)
+            conv_changes = self._detect_conversation_changes(
+                local_conv, remote_conv, change_types
+            )
             changes_detected.extend(conv_changes)
 
         detection_duration = (datetime.now() - start_detection).total_seconds()
@@ -161,11 +178,15 @@ class ConversationChangeDetector:
             detection_duration_seconds=detection_duration,
         )
 
-        logger.info(f"Specific change detection completed: {len(changes_detected)} changes found")
+        logger.info(
+            f"Specific change detection completed: {len(changes_detected)} changes found"
+        )
 
         return result
 
-    def _get_local_conversations(self, conversation_ids: list[str]) -> list[Conversation]:
+    def _get_local_conversations(
+        self, conversation_ids: list[str]
+    ) -> list[Conversation]:
         """Get local versions of conversations from database."""
         # This is a simplified implementation
         # In practice, we'd want a more efficient query that gets specific conversations by ID
@@ -176,7 +197,10 @@ class ConversationChangeDetector:
         return [conv for conv in all_local if conv.id in conversation_ids]
 
     def _detect_conversation_changes(
-        self, local_conv: Conversation, remote_conv: Conversation, change_types: list[str]
+        self,
+        local_conv: Conversation,
+        remote_conv: Conversation,
+        change_types: list[str],
     ) -> list[ConversationChange]:
         """Detect specific changes between local and remote conversation versions."""
         changes = []
@@ -194,7 +218,9 @@ class ConversationChangeDetector:
                         details={
                             "new_message_count": len(new_messages),
                             "new_message_ids": [msg.id for msg in new_messages],
-                            "latest_message_time": max(msg.created_at for msg in new_messages)
+                            "latest_message_time": max(
+                                msg.created_at for msg in new_messages
+                            )
                             if new_messages
                             else None,
                         },
@@ -202,7 +228,10 @@ class ConversationChangeDetector:
                 )
 
         # Detect state changes (updated_at timestamp)
-        if "state_change" in change_types and remote_conv.updated_at > local_conv.updated_at:
+        if (
+            "state_change" in change_types
+            and remote_conv.updated_at > local_conv.updated_at
+        ):
             time_diff = (remote_conv.updated_at - local_conv.updated_at).total_seconds()
             if time_diff > self.message_timestamp_tolerance_seconds:
                 changes.append(
@@ -219,7 +248,9 @@ class ConversationChangeDetector:
                 )
 
         # Detect tag changes
-        if "tags_updated" in change_types and set(local_conv.tags) != set(remote_conv.tags):
+        if "tags_updated" in change_types and set(local_conv.tags) != set(
+            remote_conv.tags
+        ):
             added_tags = set(remote_conv.tags) - set(local_conv.tags)
             removed_tags = set(local_conv.tags) - set(remote_conv.tags)
 
@@ -307,12 +338,16 @@ class ConversationChangeDetector:
         cutoff_time = now - timedelta(hours=time_window_hours)
 
         # Filter to recent changes
-        recent_changes = [change for change in changes if change.detected_at >= cutoff_time]
+        recent_changes = [
+            change for change in changes if change.detected_at >= cutoff_time
+        ]
 
         # Analyze by change type
         change_counts = {}
         for change in recent_changes:
-            change_counts[change.change_type] = change_counts.get(change.change_type, 0) + 1
+            change_counts[change.change_type] = (
+                change_counts.get(change.change_type, 0) + 1
+            )
 
         # Analyze by conversation
         conversation_activity = {}
@@ -323,20 +358,25 @@ class ConversationChangeDetector:
             conversation_activity[conv_id].append(change)
 
         # Find most active conversations
-        most_active = sorted(conversation_activity.items(), key=lambda x: len(x[1]), reverse=True)[
-            :10
-        ]
+        most_active = sorted(
+            conversation_activity.items(), key=lambda x: len(x[1]), reverse=True
+        )[:10]
 
         # Calculate change frequency
         hours_elapsed = (
             min(
                 time_window_hours,
-                (now - min(change.detected_at for change in recent_changes)).total_seconds() / 3600,
+                (
+                    now - min(change.detected_at for change in recent_changes)
+                ).total_seconds()
+                / 3600,
             )
             if recent_changes
             else time_window_hours
         )
-        change_frequency = len(recent_changes) / hours_elapsed if hours_elapsed > 0 else 0
+        change_frequency = (
+            len(recent_changes) / hours_elapsed if hours_elapsed > 0 else 0
+        )
 
         return {
             "total_changes": len(recent_changes),

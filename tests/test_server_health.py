@@ -19,12 +19,12 @@ class TestServerHealth:
         mock_db = Mock(spec=DatabaseManager)
         mock_db.db_path = ":memory:"
         mock_db.get_sync_status.return_value = {
-            'database_size_mb': 1.5,
-            'total_conversations': 100,
-            'total_messages': 500,
-            'last_sync': '2023-01-01T12:00:00',
-            'database_path': ':memory:',
-            'recent_syncs': []
+            "database_size_mb": 1.5,
+            "total_conversations": 100,
+            "total_messages": 500,
+            "last_sync": "2023-01-01T12:00:00",
+            "database_path": ":memory:",
+            "recent_syncs": [],
         }
         mock_db.search_conversations.return_value = []
         mock_db.get_data_freshness_for_timeframe.return_value = 0
@@ -35,15 +35,14 @@ class TestServerHealth:
     def mock_sync_service(self):
         """Create a mock sync service."""
         mock_sync = Mock(spec=SyncService)
-        mock_sync.get_status.return_value = {
-            'active': True,
-            'current_operation': None
-        }
-        mock_sync.sync_if_needed = AsyncMock(return_value={
-            'sync_state': 'fresh',
-            'message': 'Data is up to date',
-            'data_complete': True
-        })
+        mock_sync.get_status.return_value = {"active": True, "current_operation": None}
+        mock_sync.sync_if_needed = AsyncMock(
+            return_value={
+                "sync_state": "fresh",
+                "message": "Data is up to date",
+                "data_complete": True,
+            }
+        )
         return mock_sync
 
     @pytest.fixture
@@ -58,26 +57,26 @@ class TestServerHealth:
         return FastIntercomMCPServer(
             database_manager=mock_database_manager,
             sync_service=mock_sync_service,
-            intercom_client=mock_intercom_client
+            intercom_client=mock_intercom_client,
         )
 
     @pytest.mark.asyncio
     async def test_server_creation(self, server):
         """Test that the MCP server can be created without errors."""
         assert server is not None
-        assert hasattr(server, 'server')
-        assert hasattr(server, 'db')
-        assert hasattr(server, 'sync_service')
-        assert hasattr(server, 'intercom_client')
+        assert hasattr(server, "server")
+        assert hasattr(server, "db")
+        assert hasattr(server, "sync_service")
+        assert hasattr(server, "intercom_client")
 
     @pytest.mark.asyncio
     async def test_server_has_required_attributes(self, server):
         """Test that server has all required attributes."""
-        assert hasattr(server, '_list_tools')
-        assert hasattr(server, '_call_tool')
-        assert hasattr(server, 'run')
-        assert hasattr(server, 'start_background_sync')
-        assert hasattr(server, 'stop_background_sync')
+        assert hasattr(server, "_list_tools")
+        assert hasattr(server, "_call_tool")
+        assert hasattr(server, "run")
+        assert hasattr(server, "start_background_sync")
+        assert hasattr(server, "stop_background_sync")
 
     @pytest.mark.asyncio
     async def test_server_tools_registration(self, server):
@@ -88,14 +87,14 @@ class TestServerHealth:
         # Check that expected tools are present
         tool_names = [tool.name for tool in tools]
         expected_tools = [
-            'search_conversations',
-            'get_conversation',
-            'get_server_status',
-            'sync_conversations',
-            'get_data_info',
-            'check_coverage',
-            'get_sync_status',
-            'force_sync'
+            "search_conversations",
+            "get_conversation",
+            "get_server_status",
+            "sync_conversations",
+            "get_data_info",
+            "check_coverage",
+            "get_sync_status",
+            "force_sync",
         ]
 
         for expected_tool in expected_tools:
@@ -104,16 +103,16 @@ class TestServerHealth:
     @pytest.mark.asyncio
     async def test_get_server_status_tool(self, server):
         """Test the get_server_status tool."""
-        result = await server._call_tool('get_server_status', {})
+        result = await server._call_tool("get_server_status", {})
         assert isinstance(result, list)
         assert len(result) > 0
-        assert result[0].type == 'text'
-        assert 'FastIntercom Server Status' in result[0].text
+        assert result[0].type == "text"
+        assert "FastIntercom Server Status" in result[0].text
 
     @pytest.mark.asyncio
     async def test_get_sync_status_tool(self, server):
         """Test the get_sync_status tool."""
-        with patch('sqlite3.connect') as mock_connect:
+        with patch("sqlite3.connect") as mock_connect:
             # Mock database connection
             mock_conn = Mock()
             mock_cursor = Mock()
@@ -121,16 +120,16 @@ class TestServerHealth:
             mock_conn.execute.return_value = mock_cursor
             mock_connect.return_value.__enter__.return_value = mock_conn
 
-            result = await server._call_tool('get_sync_status', {})
+            result = await server._call_tool("get_sync_status", {})
             assert isinstance(result, list)
             assert len(result) > 0
-            assert result[0].type == 'text'
-            assert 'is_syncing' in result[0].text
+            assert result[0].type == "text"
+            assert "is_syncing" in result[0].text
 
     @pytest.mark.asyncio
     async def test_get_data_info_tool(self, server):
         """Test the get_data_info tool."""
-        with patch('sqlite3.connect') as mock_connect:
+        with patch("sqlite3.connect") as mock_connect:
             # Mock database connection
             mock_conn = Mock()
             mock_cursor = Mock()
@@ -138,31 +137,30 @@ class TestServerHealth:
             mock_conn.execute.return_value = mock_cursor
             mock_connect.return_value.__enter__.return_value = mock_conn
 
-            result = await server._call_tool('get_data_info', {})
+            result = await server._call_tool("get_data_info", {})
             assert isinstance(result, list)
             assert len(result) > 0
-            assert result[0].type == 'text'
-            assert 'has_data' in result[0].text
+            assert result[0].type == "text"
+            assert "has_data" in result[0].text
 
     @pytest.mark.asyncio
     async def test_invalid_tool_call(self, server):
         """Test that invalid tool calls are handled gracefully."""
-        result = await server._call_tool('invalid_tool', {})
+        result = await server._call_tool("invalid_tool", {})
         assert isinstance(result, list)
         assert len(result) > 0
-        assert result[0].type == 'text'
-        assert 'Unknown tool' in result[0].text
+        assert result[0].type == "text"
+        assert "Unknown tool" in result[0].text
 
     @pytest.mark.asyncio
     async def test_search_conversations_tool(self, server):
         """Test the search_conversations tool."""
-        result = await server._call_tool('search_conversations', {
-            'query': 'test',
-            'limit': 10
-        })
+        result = await server._call_tool(
+            "search_conversations", {"query": "test", "limit": 10}
+        )
         assert isinstance(result, list)
         assert len(result) > 0
-        assert result[0].type == 'text'
+        assert result[0].type == "text"
 
     @pytest.mark.asyncio
     async def test_server_handles_exceptions_gracefully(self, server):
@@ -170,12 +168,10 @@ class TestServerHealth:
         # Mock the sync_service to raise an exception
         server.sync_service.sync_if_needed.side_effect = Exception("Test error")
 
-        result = await server._call_tool('search_conversations', {
-            'query': 'test'
-        })
+        result = await server._call_tool("search_conversations", {"query": "test"})
         assert isinstance(result, list)
         assert len(result) > 0
-        assert result[0].type == 'text'
+        assert result[0].type == "text"
         # Should still return results, not crash
 
     @pytest.mark.asyncio
@@ -190,7 +186,7 @@ class TestServerHealth:
             "last 30 days",
             "this month",
             "last week",
-            "yesterday"
+            "yesterday",
         ]
 
         for timeframe in test_cases:

@@ -40,7 +40,9 @@ class SyncExecutionResult:
 class SyncStateManager:
     """Manages conversation-level sync state and coordinates sync operations."""
 
-    def __init__(self, database_manager: DatabaseManager, intercom_client: IntercomClient):
+    def __init__(
+        self, database_manager: DatabaseManager, intercom_client: IntercomClient
+    ):
         self.db = database_manager
         self.intercom = intercom_client
         self.sync_tracker = ConversationSyncTracker(database_manager)
@@ -79,9 +81,13 @@ class SyncStateManager:
             for conv_id in target_conversations:
                 state = self.sync_tracker.get_conversation_sync_state(conv_id)
 
-                if force_full_sync or state.needs_full_sync(self.full_sync_staleness_hours):
+                if force_full_sync or state.needs_full_sync(
+                    self.full_sync_staleness_hours
+                ):
                     full_sync_needed.append(conv_id)
-                elif state.needs_incremental_sync(self.incremental_sync_staleness_minutes):
+                elif state.needs_incremental_sync(
+                    self.incremental_sync_staleness_minutes
+                ):
                     incremental_sync_needed.append(conv_id)
         else:
             # Auto-detect conversations needing sync
@@ -89,8 +95,10 @@ class SyncStateManager:
                 self.full_sync_staleness_hours, max_conversations // 2
             )
 
-            incremental_sync_needed = self.sync_tracker.get_conversations_needing_incremental_sync(
-                self.incremental_sync_staleness_minutes, max_conversations // 2
+            incremental_sync_needed = (
+                self.sync_tracker.get_conversations_needing_incremental_sync(
+                    self.incremental_sync_staleness_minutes, max_conversations // 2
+                )
             )
 
         # Get conversations currently in progress
@@ -185,7 +193,9 @@ class SyncStateManager:
                 errors.append(f"Full sync {conv_id}: {str(e)}")
 
                 # Mark as failed in state tracking
-                self.sync_tracker.mark_sync_failed(conv_id, SyncType.FULL, start_time, str(e))
+                self.sync_tracker.mark_sync_failed(
+                    conv_id, SyncType.FULL, start_time, str(e)
+                )
 
         # Execute incremental syncs
         for i, conv_id in enumerate(plan.incremental_sync_needed):
@@ -234,7 +244,9 @@ class SyncStateManager:
 
         try:
             # Fetch complete conversation
-            conversation = await self.intercom.fetch_individual_conversation(conversation_id)
+            conversation = await self.intercom.fetch_individual_conversation(
+                conversation_id
+            )
 
             if conversation is None:
                 raise Exception(f"Conversation {conversation_id} not found")
@@ -267,7 +279,9 @@ class SyncStateManager:
 
     async def _execute_incremental_sync(self, conversation_id: str) -> dict[str, Any]:
         """Execute an incremental sync for a specific conversation."""
-        started_at = self.sync_tracker.mark_sync_started(conversation_id, SyncType.INCREMENTAL)
+        started_at = self.sync_tracker.mark_sync_started(
+            conversation_id, SyncType.INCREMENTAL
+        )
 
         try:
             # Get current state
@@ -292,7 +306,9 @@ class SyncStateManager:
             new_messages_count = 0
             if existing_conversation:
                 # Compare messages to find new ones
-                existing_message_ids = {msg.id for msg in existing_conversation.messages}
+                existing_message_ids = {
+                    msg.id for msg in existing_conversation.messages
+                }
                 new_messages = [
                     msg
                     for msg in current_conversation.messages
@@ -313,7 +329,10 @@ class SyncStateManager:
                 started_at,
                 message_count=len(current_conversation.messages),
                 api_calls_made=1,
-                metadata={"new_messages_count": new_messages_count, "stored_count": stored_count},
+                metadata={
+                    "new_messages_count": new_messages_count,
+                    "stored_count": stored_count,
+                },
             )
 
             return {
@@ -326,7 +345,11 @@ class SyncStateManager:
 
         except Exception as e:
             self.sync_tracker.mark_sync_failed(
-                conversation_id, SyncType.INCREMENTAL, started_at, str(e), api_calls_made=1
+                conversation_id,
+                SyncType.INCREMENTAL,
+                started_at,
+                str(e),
+                api_calls_made=1,
             )
             raise
 
@@ -350,7 +373,9 @@ class SyncStateManager:
 
         # Get conversation metadata for prioritization
         conversations = self.db.search_conversations(limit=10000)
-        conv_by_id = {conv.id: conv for conv in conversations if conv.id in conversation_ids}
+        conv_by_id = {
+            conv.id: conv for conv in conversations if conv.id in conversation_ids
+        }
 
         # Priority scoring
         prioritized = []
@@ -366,8 +391,12 @@ class SyncStateManager:
             score = 0
 
             # Recent activity (higher score for more recent)
-            hours_since_update = (datetime.now() - conv.updated_at).total_seconds() / 3600
-            score += max(0, 100 - hours_since_update)  # Up to 100 points for very recent
+            hours_since_update = (
+                datetime.now() - conv.updated_at
+            ).total_seconds() / 3600
+            score += max(
+                0, 100 - hours_since_update
+            )  # Up to 100 points for very recent
 
             # Message count (more messages = higher priority)
             score += min(50, len(conv.messages))  # Up to 50 points
@@ -401,7 +430,9 @@ class SyncStateManager:
         # Identify issues
         issues = []
         if stats.get("conversations_with_errors", 0) > 0:
-            issues.append(f"{stats['conversations_with_errors']} conversations have sync errors")
+            issues.append(
+                f"{stats['conversations_with_errors']} conversations have sync errors"
+            )
 
         if stats.get("in_progress", 0) > 10:
             issues.append(f"{stats['in_progress']} syncs appear stuck in progress")
@@ -412,7 +443,9 @@ class SyncStateManager:
         return {
             "health_score": round(health_score, 1),
             "total_conversations": total_conversations,
-            "sync_coverage_percentage": round((full_synced / total_conversations) * 100, 1)
+            "sync_coverage_percentage": round(
+                (full_synced / total_conversations) * 100, 1
+            )
             if total_conversations > 0
             else 0,
             "error_rate_percentage": round((failed / total_conversations) * 100, 1)
@@ -434,7 +467,9 @@ class SyncStateManager:
         recommendations = []
 
         if stats.get("conversations_with_errors", 0) > 5:
-            recommendations.append("Review and fix sync errors for affected conversations")
+            recommendations.append(
+                "Review and fix sync errors for affected conversations"
+            )
 
         if stats.get("avg_duration_seconds", 0) > 30:
             recommendations.append(
@@ -449,9 +484,9 @@ class SyncStateManager:
                 "Many conversations haven't been fully synced - consider running a comprehensive sync"
             )
 
-        if stats.get("recent_failures", 0) > stats.get("recent_full_syncs", 0) + stats.get(
-            "recent_incremental_syncs", 0
-        ):
+        if stats.get("recent_failures", 0) > stats.get(
+            "recent_full_syncs", 0
+        ) + stats.get("recent_incremental_syncs", 0):
             recommendations.append(
                 "High failure rate detected - check API connectivity and rate limits"
             )

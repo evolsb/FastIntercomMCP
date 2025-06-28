@@ -170,7 +170,9 @@ class FullThreadSyncStrategy:
         if self.progress_callback:
             await self.progress_callback(f"Fetch: {message}")
 
-    async def _update_progress(self, phase: str, current: int, total: int, message: str):
+    async def _update_progress(
+        self, phase: str, current: int, total: int, message: str
+    ):
         """Update progress with standardized format."""
         if self.progress_callback:
             progress = SyncProgress(phase, current, total, message)
@@ -254,7 +256,9 @@ class IncrementalSyncStrategy:
         if until_timestamp is None:
             until_timestamp = datetime.now()
 
-        await self._update_progress("analyze", 0, 1, "Analyzing conversation changes...")
+        await self._update_progress(
+            "analyze", 0, 1, "Analyzing conversation changes..."
+        )
 
         # Detect changes in the timeframe
         detection_result = await self.change_detector.detect_changes_in_timeframe(
@@ -279,7 +283,9 @@ class IncrementalSyncStrategy:
             "recommendations": self._generate_sync_recommendations(pattern_analysis),
         }
 
-    def _generate_sync_recommendations(self, pattern_analysis: dict[str, Any]) -> dict[str, Any]:
+    def _generate_sync_recommendations(
+        self, pattern_analysis: dict[str, Any]
+    ) -> dict[str, Any]:
         """Generate sync recommendations based on change patterns."""
         changes_per_hour = pattern_analysis.get("average_changes_per_hour", 0)
         total_changes = pattern_analysis.get("total_changes", 0)
@@ -313,7 +319,9 @@ class IncrementalSyncStrategy:
         if self.progress_callback:
             await self.progress_callback(f"Incremental: {message}")
 
-    async def _update_progress(self, phase: str, current: int, total: int, message: str):
+    async def _update_progress(
+        self, phase: str, current: int, total: int, message: str
+    ):
         """Update progress with standardized format."""
         if self.progress_callback:
             progress = SyncProgress(phase, current, total, message)
@@ -360,13 +368,17 @@ class SmartSyncStrategy:
             Sync statistics
         """
         if force_full:
-            await self._update_progress("strategy", 0, 1, "Using full thread sync (forced)")
+            await self._update_progress(
+                "strategy", 0, 1, "Using full thread sync (forced)"
+            )
             return await self.full_strategy.sync_period(start_date, end_date)
 
         # Analyze sync requirements
         sync_decision = await self._analyze_sync_requirements(start_date, end_date)
 
-        await self._update_progress("strategy", 0, 1, f"Using {sync_decision['strategy']} sync")
+        await self._update_progress(
+            "strategy", 0, 1, f"Using {sync_decision['strategy']} sync"
+        )
 
         if sync_decision["strategy"] == "full":
             return await self.full_strategy.sync_period(start_date, end_date)
@@ -394,7 +406,9 @@ class SmartSyncStrategy:
         )
 
         # Check last sync time for this period
-        sync_state = self.db.check_sync_state(start_date, end_date, freshness_threshold_minutes=30)
+        sync_state = self.db.check_sync_state(
+            start_date, end_date, freshness_threshold_minutes=30
+        )
 
         # Decision logic
         if not existing_conversations:
@@ -402,7 +416,10 @@ class SmartSyncStrategy:
             return {"strategy": "full", "reason": "No existing data for period"}
         if sync_state["sync_state"] == "stale":
             # Data is very stale - use full sync for accuracy
-            return {"strategy": "full", "reason": "Data is stale, need complete refresh"}
+            return {
+                "strategy": "full",
+                "reason": "Data is stale, need complete refresh",
+            }
         # Have some data - incremental might be sufficient
         time_span = end_date - start_date
         if time_span <= timedelta(hours=24):
@@ -412,9 +429,14 @@ class SmartSyncStrategy:
                 "reason": "Short time span, incremental is efficient",
             }
         # Longer time span - full sync for completeness
-        return {"strategy": "full", "reason": "Long time span, full sync for completeness"}
+        return {
+            "strategy": "full",
+            "reason": "Long time span, full sync for completeness",
+        }
 
-    async def _update_progress(self, phase: str, current: int, total: int, message: str):
+    async def _update_progress(
+        self, phase: str, current: int, total: int, message: str
+    ):
         """Update progress with standardized format."""
         if self.progress_callback:
             SyncProgress(phase, current, total, message)

@@ -151,7 +151,9 @@ class ConversationSyncTracker:
 
             conn.commit()
 
-    def get_conversation_sync_state(self, conversation_id: str) -> ConversationSyncState:
+    def get_conversation_sync_state(
+        self, conversation_id: str
+    ) -> ConversationSyncState:
         """Get sync state for a specific conversation."""
         with sqlite3.connect(self.db.db_path) as conn:
             conn.row_factory = sqlite3.Row
@@ -195,7 +197,9 @@ class ConversationSyncTracker:
                     state.last_incremental_sync.isoformat()
                     if state.last_incremental_sync
                     else None,
-                    state.last_sync_attempt.isoformat() if state.last_sync_attempt else None,
+                    state.last_sync_attempt.isoformat()
+                    if state.last_sync_attempt
+                    else None,
                     state.sync_status.value,
                     state.sync_type.value if state.sync_type else None,
                     state.message_count_synced,
@@ -204,7 +208,9 @@ class ConversationSyncTracker:
                     else None,
                     state.error_count,
                     state.last_error,
-                    state.last_error_timestamp.isoformat() if state.last_error_timestamp else None,
+                    state.last_error_timestamp.isoformat()
+                    if state.last_error_timestamp
+                    else None,
                     state.sync_completion_percentage,
                     metadata_json,
                 ),
@@ -366,7 +372,9 @@ class ConversationSyncTracker:
 
             return stats
 
-    def get_conversations_with_sync_errors(self, hours_back: int = 24) -> list[dict[str, Any]]:
+    def get_conversations_with_sync_errors(
+        self, hours_back: int = 24
+    ) -> list[dict[str, Any]]:
         """Get conversations that have had sync errors recently."""
         threshold = datetime.now() - timedelta(hours=hours_back)
 
@@ -426,7 +434,9 @@ class ConversationSyncTracker:
         self.update_conversation_sync_state(state)
 
         # Log attempt
-        self.log_sync_attempt(conversation_id, sync_type, SyncStatus.IN_PROGRESS, started_at)
+        self.log_sync_attempt(
+            conversation_id, sync_type, SyncStatus.IN_PROGRESS, started_at
+        )
 
         return started_at
 

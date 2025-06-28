@@ -111,7 +111,9 @@ class TwoPhaseSyncCoordinator:
             Combined sync statistics
         """
         operation_start = time.time()
-        self._active_operation = f"Two-phase sync {start_date.date()} to {end_date.date()}"
+        self._active_operation = (
+            f"Two-phase sync {start_date.date()} to {end_date.date()}"
+        )
         self._phase_results.clear()
         self._discovered_conversations.clear()
         self._fetched_conversations.clear()
@@ -127,7 +129,9 @@ class TwoPhaseSyncCoordinator:
             discovery_result = await self._execute_discovery_phase(start_date, end_date)
 
             if not discovery_result.success:
-                raise Exception(f"Discovery phase failed: {'; '.join(discovery_result.errors)}")
+                raise Exception(
+                    f"Discovery phase failed: {'; '.join(discovery_result.errors)}"
+                )
 
             # Filter conversations based on database state and force_refetch flag
             conversations_to_fetch = await self._filter_conversations_for_fetch(
@@ -135,8 +139,12 @@ class TwoPhaseSyncCoordinator:
             )
 
             if not conversations_to_fetch:
-                logger.info("No conversations need fetching - all are current in database")
-                await self._notify_progress("All conversations are current - no fetching needed")
+                logger.info(
+                    "No conversations need fetching - all are current in database"
+                )
+                await self._notify_progress(
+                    "All conversations are current - no fetching needed"
+                )
 
                 # Create summary stats from discovery only
                 total_duration = time.time() - operation_start
@@ -266,7 +274,9 @@ class TwoPhaseSyncCoordinator:
 
         return conversations_needing_fetch
 
-    async def _execute_fetch_phase(self, conversation_ids: list[str]) -> SyncPhaseResult:
+    async def _execute_fetch_phase(
+        self, conversation_ids: list[str]
+    ) -> SyncPhaseResult:
         """Execute Phase 2: Fetch complete conversation threads."""
         phase_start = time.time()
         api_calls = 0
@@ -309,7 +319,9 @@ class TwoPhaseSyncCoordinator:
                     )
 
                 except Exception as e:
-                    error_msg = f"Batch fetch failed for {len(batch)} conversations: {str(e)}"
+                    error_msg = (
+                        f"Batch fetch failed for {len(batch)} conversations: {str(e)}"
+                    )
                     errors.append(error_msg)
                     logger.warning(error_msg)
 
@@ -362,7 +374,10 @@ class TwoPhaseSyncCoordinator:
             return result
 
     def _create_summary_stats(
-        self, total_conversations: int, fetched_conversations: int, total_duration: float
+        self,
+        total_conversations: int,
+        fetched_conversations: int,
+        total_duration: float,
     ) -> SyncStats:
         """Create comprehensive sync statistics from phase results."""
         total_api_calls = sum(result.api_calls for result in self._phase_results)

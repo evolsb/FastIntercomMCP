@@ -63,7 +63,9 @@ class IncrementalSync:
         if until_timestamp is None:
             until_timestamp = datetime.now()
 
-        logger.info(f"Starting incremental sync from {since_timestamp} to {until_timestamp}")
+        logger.info(
+            f"Starting incremental sync from {since_timestamp} to {until_timestamp}"
+        )
 
         # Phase 1: Identify conversations that may have updates
         if conversation_ids is None:
@@ -93,7 +95,9 @@ class IncrementalSync:
         )
 
         # Phase 3: Sync conversations that need updates
-        sync_results = await self._sync_updated_conversations(update_results["needs_update"])
+        sync_results = await self._sync_updated_conversations(
+            update_results["needs_update"]
+        )
 
         duration = (datetime.now() - start_time).total_seconds()
 
@@ -152,7 +156,8 @@ class IncrementalSync:
 
         # Get list of conversation IDs we already have in database
         existing_conversations = self.db.search_conversations(
-            start_date=since_timestamp - timedelta(days=30),  # Look back further for existing
+            start_date=since_timestamp
+            - timedelta(days=30),  # Look back further for existing
             end_date=until_timestamp,
             limit=1000,  # Large limit to get most conversations
         )
@@ -172,7 +177,10 @@ class IncrementalSync:
         return stale_ids
 
     async def _check_conversations_for_updates(
-        self, conversation_ids: list[str], since_timestamp: datetime, until_timestamp: datetime
+        self,
+        conversation_ids: list[str],
+        since_timestamp: datetime,
+        until_timestamp: datetime,
     ) -> dict[str, Any]:
         """Check which conversations actually need updates.
 
@@ -200,9 +208,15 @@ class IncrementalSync:
                 # A more sophisticated implementation would maintain per-conversation sync timestamps
                 needs_update.append(conv_id)
 
-        return {"needs_update": needs_update, "up_to_date": up_to_date, "api_calls": api_calls}
+        return {
+            "needs_update": needs_update,
+            "up_to_date": up_to_date,
+            "api_calls": api_calls,
+        }
 
-    async def _sync_updated_conversations(self, conversation_ids: list[str]) -> dict[str, Any]:
+    async def _sync_updated_conversations(
+        self, conversation_ids: list[str]
+    ) -> dict[str, Any]:
         """Sync the conversations that need updates.
 
         Fetches complete conversation threads for the given IDs and stores them.
@@ -211,7 +225,9 @@ class IncrementalSync:
             return {"updated_count": 0, "total_new_messages": 0, "api_calls": 0}
 
         # Fetch complete conversation threads
-        updated_conversations = await self.intercom.fetch_individual_conversations(conversation_ids)
+        updated_conversations = await self.intercom.fetch_individual_conversations(
+            conversation_ids
+        )
 
         # Count new messages by comparing with existing data
         total_new_messages = 0
@@ -280,7 +296,9 @@ class IncrementalSync:
             if check_message_level:
                 existing_message_ids = {msg.id for msg in existing_conv.messages}
                 new_messages = [
-                    msg for msg in current_conv.messages if msg.id not in existing_message_ids
+                    msg
+                    for msg in current_conv.messages
+                    if msg.id not in existing_message_ids
                 ]
 
                 if new_messages:

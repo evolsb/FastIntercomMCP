@@ -9,7 +9,9 @@ from urllib.parse import quote
 class SyncStateException(Exception):
     """Exception raised when data sync state doesn't meet query requirements."""
 
-    def __init__(self, message: str, sync_state: str, last_sync: datetime | None = None):
+    def __init__(
+        self, message: str, sync_state: str, last_sync: datetime | None = None
+    ):
         super().__init__(message)
         self.sync_state = sync_state  # 'stale', 'partial', or 'fresh'
         self.last_sync = last_sync

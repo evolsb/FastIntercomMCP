@@ -43,7 +43,9 @@ class Config:
             "database_path": os.getenv("FASTINTERCOM_DB_PATH"),
             "log_level": os.getenv("FASTINTERCOM_LOG_LEVEL"),
             "max_sync_age_minutes": os.getenv("FASTINTERCOM_MAX_SYNC_AGE_MINUTES"),
-            "background_sync_interval_minutes": os.getenv("FASTINTERCOM_BACKGROUND_SYNC_INTERVAL"),
+            "background_sync_interval_minutes": os.getenv(
+                "FASTINTERCOM_BACKGROUND_SYNC_INTERVAL"
+            ),
             "initial_sync_days": os.getenv("FASTINTERCOM_INITIAL_SYNC_DAYS"),
             "connection_pool_size": os.getenv("FASTINTERCOM_DB_POOL_SIZE"),
             "api_timeout_seconds": os.getenv("FASTINTERCOM_API_TIMEOUT_SECONDS"),
@@ -73,7 +75,9 @@ class Config:
         if "connection_pool_size" in config_data:
             pool_size = config_data["connection_pool_size"]
             if pool_size < 1 or pool_size > 20:
-                raise ValueError(f"Database pool size must be between 1 and 20, got {pool_size}")
+                raise ValueError(
+                    f"Database pool size must be between 1 and 20, got {pool_size}"
+                )
 
         return cls(**config_data)
 
