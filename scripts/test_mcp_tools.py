@@ -12,9 +12,7 @@ import sys
 import time
 import argparse
 from typing import Any, Dict, List, Optional
-from pathlib import Path
 import subprocess
-import tempfile
 
 # Test configuration for MCP tools
 TEST_QUERIES = [

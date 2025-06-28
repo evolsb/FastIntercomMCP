@@ -5,7 +5,6 @@ Comprehensive local sync test with detailed performance metrics
 import time
 import os
 import sys
-import sqlite3
 import psutil
 import json
 import asyncio

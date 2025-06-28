@@ -22,9 +22,8 @@ import os
 import sys
 import tempfile
 import time
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 # Optional pytest import
 try:
@@ -213,7 +212,7 @@ class IntegrationTestRunner:
             sync_speed = stats.total_conversations / sync_duration if sync_duration > 0 else 0
             
             # Log results
-            logger.info(f"✅ Initial sync completed successfully!")
+            logger.info("✅ Initial sync completed successfully!")
             logger.info(f"   - Conversations: {stats.total_conversations:,}")
             logger.info(f"   - Messages: {stats.total_messages:,}")
             logger.info(f"   - Duration: {sync_duration:.1f} seconds")
@@ -293,7 +292,7 @@ class IntegrationTestRunner:
             if incomplete_count > len(recent_conversations) * 0.1:  # More than 10% incomplete
                 logger.warning(f"⚠️  {incomplete_count} conversations have no messages")
                 
-            logger.info(f"✅ Database integrity verified")
+            logger.info("✅ Database integrity verified")
             logger.info(f"   - {conv_count:,} conversations")
             logger.info(f"   - {msg_count:,} messages")
             logger.info(f"   - {msg_per_conv:.1f} messages per conversation")
@@ -369,7 +368,7 @@ class IntegrationTestRunner:
             # Check response times
             max_response_time = self.performance_targets['max_response_time']
             
-            logger.info(f"✅ MCP server functionality verified")
+            logger.info("✅ MCP server functionality verified")
             logger.info(f"   - Status response time: {status_time*1000:.1f}ms")
             logger.info(f"   - Search response time: {search_time*1000:.1f}ms")
             logger.info(f"   - Get conversation time: {get_time*1000:.1f}ms")

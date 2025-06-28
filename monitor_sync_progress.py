@@ -4,7 +4,6 @@ Monitor sync progress in real time
 """
 import time
 import sqlite3
-import os
 from pathlib import Path
 
 def get_db_stats(db_path):
