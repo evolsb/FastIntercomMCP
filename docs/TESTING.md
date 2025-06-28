@@ -11,6 +11,47 @@ The testing strategy covers multiple layers:
 - Performance Tests (benchmarking)
 - CI/CD Tests (automated)
 
+## Test Path Consistency
+
+### Critical Testing Requirement: Use Production Code Paths
+
+**Important**: All local tests must use the same sync methods as CI/GitHub Actions to ensure consistency and catch bugs early.
+
+#### Standard Sync Method
+All tests should use `SyncService.sync_period()` method, which is the production sync method used in:
+- GitHub Actions CI tests  
+- comprehensive_sync_test.py
+- Updated performance tests
+- All production deployments
+
+#### Deprecated Methods
+❌ **Do NOT use these in tests**:
+- `SyncManager` (deprecated)
+- CLI subprocess calls for sync operations 
+- Non-existent methods like `sync_conversations()`
+
+#### Correct Test Pattern
+```python
+# ✅ CORRECT: Use direct SyncService calls (same as CI)
+from fast_intercom_mcp.sync_service import SyncService
+from fast_intercom_mcp.database import DatabaseManager
+from fast_intercom_mcp.intercom_client import IntercomClient
+
+async def test_sync():
+    db_manager = DatabaseManager(config)
+    client = IntercomClient(token)
+    sync_service = SyncService(db_manager, client)
+    
+    # Use same method as GitHub Actions
+    stats = await sync_service.sync_period(start_date, end_date)
+    return stats
+
+# ❌ INCORRECT: Using CLI subprocess (different path)
+result = subprocess.run(['fast-intercom-mcp', 'sync', '--days', '7'])
+```
+
+This ensures that local tests catch the same issues as CI tests and prevents inconsistencies between local and remote testing environments.
+
 ## Test Types
 
 ### 1. Unit Tests
@@ -453,13 +494,74 @@ fast-intercom-mcp reset --test-mode
 ## Integration with Development Workflow
 
 ### Pre-commit Testing
+
+Pre-commit hooks ensure code quality and catch issues before they reach CI.
+
+#### Standard Pre-commit Script
+Create `scripts/pre_commit_validation.sh`:
 ```bash
-# Add to pre-commit hook
 #!/bin/bash
-echo "Running pre-commit tests..."
-python3 -c "import fast_intercom_mcp; print('✅ Import check')"
-pytest tests/ -x --tb=short -q
-echo "✅ Pre-commit tests passed"
+set -e
+
+echo "🔧 Running pre-commit validation..."
+
+# Environment setup (detect project type)
+if [ -f "pyproject.toml" ] && command -v poetry >/dev/null 2>&1; then
+    echo "📦 Using Poetry environment"
+    PYTHON_CMD="poetry run python"
+    RUFF_CMD="poetry run ruff"
+    PYTEST_CMD="poetry run pytest"
+elif [ -f "venv/bin/activate" ]; then
+    echo "📦 Using venv environment"
+    source venv/bin/activate
+    PYTHON_CMD="python"
+    RUFF_CMD="ruff"
+    PYTEST_CMD="pytest"
+else
+    echo "📦 Using system Python"
+    PYTHON_CMD="python3"
+    RUFF_CMD="ruff"
+    PYTEST_CMD="python3 -m pytest"
+fi
+
+# 1. Import check
+echo "1️⃣ Testing module import..."
+$PYTHON_CMD -c "import fast_intercom_mcp; print('✅ Import successful')" || exit 1
+
+# 2. Linting
+echo "2️⃣ Running linting..."
+$RUFF_CMD check . --exclude venv --exclude .venv || exit 1
+
+# 3. Quick unit tests
+echo "3️⃣ Running quick unit tests..."
+$PYTEST_CMD tests/ -x --tb=short -q || exit 1
+
+# 4. CLI smoke test
+echo "4️⃣ Testing CLI functionality..."
+$PYTHON_CMD -m fast_intercom_mcp --help >/dev/null || exit 1
+
+echo "✅ All pre-commit checks passed!"
+```
+
+#### Installation
+```bash
+# Make script executable
+chmod +x scripts/pre_commit_validation.sh
+
+# Install as git pre-commit hook
+ln -sf ../../scripts/pre_commit_validation.sh .git/hooks/pre-commit
+
+# Test the hook
+./scripts/pre_commit_validation.sh
+```
+
+#### Manual Pre-commit Check
+```bash
+# Run pre-commit validation manually
+./scripts/pre_commit_validation.sh
+
+# Run with verbose output
+bash -x ./scripts/pre_commit_validation.sh
 ```
 
 ### Pull Request Testing

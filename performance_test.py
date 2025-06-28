@@ -10,8 +10,17 @@ import sqlite3
 import psutil
 import json
 import subprocess
-from datetime import datetime
+import asyncio
+from datetime import datetime, timedelta
 from pathlib import Path
+
+# Add the project to the path  
+sys.path.insert(0, str(Path(__file__).parent))
+
+from fast_intercom_mcp.config import Config
+from fast_intercom_mcp.database import DatabaseManager
+from fast_intercom_mcp.intercom_client import IntercomClient
+from fast_intercom_mcp.sync_service import SyncService
 
 def monitor_system_resources():
     """Get current system resource usage"""
@@ -101,6 +110,91 @@ def check_database_metrics(db_path):
         print(f"⚠️ Database check error: {e}")
         return {'size_mb': 0, 'conversations': 0, 'messages': 0}
 
+async def run_direct_sync_async(db_path, days):
+    """Run direct sync using SyncService (same as CI tests)"""
+    try:
+        # Setup config to use test database
+        config = Config()
+        config.db_path = str(db_path)
+        
+        # Initialize components (same as comprehensive_sync_test.py and CI)
+        db_manager = DatabaseManager(config)
+        client = IntercomClient(config.intercom_access_token)
+        sync_service = SyncService(db_manager, client)
+        
+        # Calculate date range
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+        
+        print(f"📅 Syncing from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+        
+        # Run sync using same method as GitHub tests
+        sync_start = time.time()
+        results = await sync_service.sync_period(start_date, end_date)
+        sync_duration = time.time() - sync_start
+        
+        # Extract results (results is SyncStats object)
+        conversations_synced = results.total_conversations
+        messages_synced = results.total_messages
+        api_requests = results.api_calls_made
+        errors = results.errors_encountered
+        
+        return {
+            'success': True,
+            'duration': sync_duration,
+            'conversations_synced': conversations_synced,
+            'messages_synced': messages_synced,
+            'api_requests': api_requests,
+            'errors': errors,
+            'stdout': f"Synced {conversations_synced} conversations, {messages_synced} messages",
+            'stderr': f"{errors} errors encountered" if errors > 0 else ""
+        }
+        
+    except Exception as e:
+        return {
+            'success': False,
+            'duration': 0,
+            'conversations_synced': 0,
+            'messages_synced': 0,
+            'api_requests': 0,
+            'errors': 1,
+            'stdout': '',
+            'stderr': f"Sync failed: {e}"
+        }
+
+def run_direct_sync_test(db_path, days, description):
+    """Run direct sync test with timing and resource monitoring"""
+    print(f"🔄 {description}...")
+    
+    start_time = time.time()
+    start_resources = monitor_system_resources()
+    
+    # Run async sync function
+    result = asyncio.run(run_direct_sync_async(db_path, days))
+    
+    end_time = time.time()
+    end_resources = monitor_system_resources()
+    
+    duration = end_time - start_time
+    peak_memory = max(start_resources['memory_mb'], end_resources['memory_mb'])
+    
+    success = result['success']
+    
+    print(f"{'✅' if success else '❌'} {description} - {duration:.2f}s, {peak_memory:.1f}MB")
+    
+    if not success:
+        print(f"  Error: {result['stderr']}")
+    else:
+        print(f"  Synced: {result['conversations_synced']} conversations, {result['messages_synced']} messages")
+    
+    # Update result with monitoring data
+    result.update({
+        'duration': duration,
+        'peak_memory_mb': peak_memory
+    })
+    
+    return result
+
 def test_environment():
     """Test basic environment setup"""
     print("🔧 Testing environment...")
@@ -135,12 +229,13 @@ def run_integration_test_with_monitoring():
     if test_db_path.exists():
         test_db_path.unlink()
     
-    # Run integration test
+    # Run integration test using direct sync service calls (same as CI)
     os.environ['FASTINTERCOM_CONFIG_DIR'] = str(test_db_path.parent)
     
-    integration_result = run_timed_test(
-        './scripts/run_integration_test.sh --days 7 --max-conversations 500',
-        "Integration test (7 days, 500 conversations max)"
+    integration_result = run_direct_sync_test(
+        test_db_path,
+        days=7,
+        description="Integration test (7 days, using SyncService.sync_period)"
     )
     
     # Check final database metrics
@@ -266,7 +361,7 @@ def main():
     if 'performance_rating' in report['summary']:
         print(f"🏆 Performance Rating: {report['summary']['performance_rating']}")
     
-    print(f"\n📈 Test Results:")
+    print("\n📈 Test Results:")
     for test_name, result in test_results.items():
         if isinstance(result, dict) and 'success' in result:
             status = '✅ PASS' if result['success'] else '❌ FAIL'
@@ -279,14 +374,14 @@ def main():
     
     if test_results.get('db_metrics', {}).get('conversations', 0) > 0:
         db = test_results['db_metrics']
-        print(f"\n💾 Database Metrics:")
+        print("\n💾 Database Metrics:")
         print(f"  • Conversations synced: {db['conversations']:,}")
         print(f"  • Messages synced: {db['messages']:,}")
         print(f"  • Database size: {db['size_mb']:.2f}MB")
         
         if 'performance_metrics' in report:
             perf = report['performance_metrics']
-            print(f"\n⚡ Performance Metrics:")
+            print("\n⚡ Performance Metrics:")
             print(f"  • Sync rate: {perf['sync_rate_conversations_per_second']:.1f} conv/sec")
             print(f"  • Storage efficiency: {perf['storage_efficiency_conversations_per_mb']:.1f} conv/MB")
             print(f"  • Memory efficiency: {perf['memory_efficiency_conversations_per_mb_ram']:.1f} conv/MB RAM")
