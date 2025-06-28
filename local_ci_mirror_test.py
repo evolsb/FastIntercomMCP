@@ -5,12 +5,12 @@ This script runs the same tests as GitHub Actions to ensure local/CI consistency
 """
 
 import asyncio
-import os
-import sys
 import json
-import time
+import os
 import shutil
-from datetime import datetime, timedelta, UTC
+import sys
+import time
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 # Add the project to the path
@@ -95,9 +95,9 @@ async def run_quick_integration_test(test_dir, sync_days=1):
 
     try:
         # This is the EXACT Python code from quick-test.yml workflow
-        from fast_intercom_mcp.sync_service import SyncService
         from fast_intercom_mcp.database import DatabaseManager
         from fast_intercom_mcp.intercom_client import IntercomClient
+        from fast_intercom_mcp.sync_service import SyncService
 
         print("⏱️  Test started at:", datetime.now(UTC).strftime("%H:%M:%S UTC"))
 
@@ -178,9 +178,10 @@ async def run_quick_integration_test(test_dir, sync_days=1):
         os.chdir(original_cwd)
 
 
-def display_test_summary(test_dir, quick_results):
+def display_test_summary(_test_dir, quick_results):
     """Mirror: Display quick test summary step from CI"""
     print("")
+    # _test_dir parameter preserved for consistency with CI workflow
     print("📋 QUICK TEST SUMMARY")
     print("=" * 20)
 
@@ -245,9 +246,8 @@ async def main():
     if quick_results:
         print("\n✅ Local CI mirror test PASSED - matches GitHub Actions behavior")
         return 0
-    else:
-        print("\n❌ Local CI mirror test FAILED")
-        return 1
+    print("\n❌ Local CI mirror test FAILED")
+    return 1
 
 
 if __name__ == "__main__":

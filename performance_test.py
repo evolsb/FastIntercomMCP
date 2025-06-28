@@ -4,16 +4,17 @@ Comprehensive performance test for FastIntercom MCP
 Uses the existing integration test infrastructure with performance monitoring
 """
 
-import time
-import os
-import sys
-import sqlite3
-import psutil
-import json
-import subprocess
 import asyncio
+import json
+import os
+import sqlite3
+import subprocess
+import sys
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
+
+import psutil
 
 # Add the project to the path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -263,11 +264,9 @@ def test_server_startup():
     print("🖥️ Testing MCP server startup...")
 
     # Test server help (quick startup test)
-    server_help_test = run_timed_test(
+    return run_timed_test(
         "timeout 10s python3 -m fast_intercom_mcp server --help", "Server help command"
     )
-
-    return server_help_test
 
 
 def calculate_efficiency_metrics(integration_result, db_metrics):

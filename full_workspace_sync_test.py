@@ -4,16 +4,17 @@ Full workspace sync with comprehensive performance monitoring
 This will sync ALL available conversations and capture detailed metrics
 """
 
-import time
-import os
-import sys
-import sqlite3
-import psutil
 import json
-import threading
+import os
+import sqlite3
 import subprocess
+import sys
+import threading
+import time
 from datetime import datetime
 from pathlib import Path
+
+import psutil
 
 
 class ComprehensiveMonitor:
@@ -141,11 +142,11 @@ def check_database_stats(db_path):
 
         # Get some sample data insights
         cursor.execute("""
-            SELECT 
+            SELECT
                 MIN(created_at) as earliest_conversation,
                 MAX(created_at) as latest_conversation,
                 AVG(LENGTH(conversation_summary)) as avg_summary_length
-            FROM conversations 
+            FROM conversations
             WHERE created_at IS NOT NULL
         """)
         row = cursor.fetchone()
@@ -267,9 +268,10 @@ def run_full_workspace_sync():
         return None
 
 
-def test_server_with_full_data(db_path):
+def test_server_with_full_data(_db_path):
     """Test server performance with full dataset"""
     print("\n🖥️ Testing server with full dataset...")
+    # _db_path parameter is used by the server internally
 
     # Test various server operations
     server_tests = {}

@@ -3,11 +3,11 @@
 Quick performance test using existing integration test data
 """
 
-import time
+import asyncio
+import json
 import os
 import sys
-import json
-import asyncio
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 

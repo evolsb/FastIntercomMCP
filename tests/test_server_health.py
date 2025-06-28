@@ -48,8 +48,7 @@ class TestServerHealth:
     @pytest.fixture
     def mock_intercom_client(self):
         """Create a mock Intercom client."""
-        mock_client = Mock()
-        return mock_client
+        return Mock()
 
     @pytest.fixture
     def server(self, mock_database_manager, mock_sync_service, mock_intercom_client):
@@ -219,10 +218,9 @@ class TestServerHealth:
         task.cancel()
 
         # Should not raise an exception
-        try:
+        import contextlib
+        with contextlib.suppress(asyncio.CancelledError):
             await task
-        except asyncio.CancelledError:
-            pass  # Expected
 
     def test_server_name_and_version(self, server):
         """Test that server has correct name and version info."""

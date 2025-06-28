@@ -3,8 +3,8 @@
 Monitor sync progress in real time
 """
 
-import time
 import sqlite3
+import time
 from pathlib import Path
 
 

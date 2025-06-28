@@ -6,13 +6,13 @@ This script tests individual MCP tools to ensure they respond correctly
 and provide properly formatted data according to the MCP specification.
 """
 
+import argparse
 import asyncio
 import json
+import subprocess
 import sys
 import time
-import argparse
-from typing import Any, Dict, List, Optional
-import subprocess
+from typing import Any
 
 # Test configuration for MCP tools
 TEST_QUERIES = [
@@ -103,10 +103,10 @@ class MCPToolTester:
     async def test_tool(
         self,
         tool_name: str,
-        arguments: Dict[str, Any],
-        expected_keys: List[str],
+        arguments: dict[str, Any],
+        expected_keys: list[str],
         description: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Test individual MCP tool."""
         self.total_tests += 1
         start_time = time.time()
@@ -175,8 +175,8 @@ class MCPToolTester:
             return error_result
 
     def _validate_tool_specific(
-        self, tool_name: str, result: Dict[str, Any]
-    ) -> List[str]:
+        self, tool_name: str, result: dict[str, Any]
+    ) -> list[str]:
         """Perform tool-specific validation."""
         errors = []
 
@@ -225,32 +225,29 @@ class MCPToolTester:
                     errors.append(f"invalid status value: {status}")
 
             # Validate conversation_count
-            if "conversation_count" in result:
-                if not isinstance(result["conversation_count"], int):
-                    errors.append("conversation_count should be an integer")
+            if "conversation_count" in result and not isinstance(result["conversation_count"], int):
+                errors.append("conversation_count should be an integer")
 
         elif tool_name == "sync_conversations":
             # Validate sync response
-            if "success" in result:
-                if not isinstance(result["success"], bool):
-                    errors.append("success should be a boolean")
+            if "success" in result and not isinstance(result["success"], bool):
+                errors.append("success should be a boolean")
 
         return errors
 
     async def _call_mcp_tool(
-        self, tool_name: str, arguments: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, tool_name: str, arguments: dict[str, Any]
+    ) -> dict[str, Any]:
         """Call MCP tool and return result."""
         if self.server_url == "stdio":
             # Use CLI interface to call tool
             return await self._call_via_cli(tool_name, arguments)
-        else:
-            # Use HTTP/WebSocket interface (not implemented in this version)
-            raise NotImplementedError("HTTP/WebSocket MCP testing not yet implemented")
+        # Use HTTP/WebSocket interface (not implemented in this version)
+        raise NotImplementedError("HTTP/WebSocket MCP testing not yet implemented")
 
     async def _call_via_cli(
-        self, tool_name: str, arguments: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, tool_name: str, arguments: dict[str, Any]
+    ) -> dict[str, Any]:
         """Call MCP tool via CLI interface."""
         # For now, simulate MCP calls using CLI commands
         # In a real implementation, this would use the MCP client library
@@ -268,7 +265,7 @@ class MCPToolTester:
                 "total_count": 1,
             }
 
-        elif tool_name == "get_server_status":
+        if tool_name == "get_server_status":
             cmd = ["fast-intercom-mcp", "status"]
             await self._run_command(cmd)
 
@@ -279,7 +276,7 @@ class MCPToolTester:
                 "last_sync": "2024-06-27T14:35:22Z",
             }
 
-        elif tool_name == "sync_conversations":
+        if tool_name == "sync_conversations":
             # Test sync command
             force_flag = "--force" if arguments.get("force", False) else ""
             cmd = ["fast-intercom-mcp", "sync"] + ([force_flag] if force_flag else [])
@@ -298,7 +295,7 @@ class MCPToolTester:
         else:
             raise ValueError(f"Unknown tool: {tool_name}")
 
-    async def _run_command(self, cmd: List[str]) -> str:
+    async def _run_command(self, cmd: list[str]) -> str:
         """Run shell command and return output."""
         try:
             process = await asyncio.create_subprocess_exec(
@@ -316,17 +313,17 @@ class MCPToolTester:
 
             return stdout.decode("utf-8")
 
-        except asyncio.TimeoutError:
+        except TimeoutError as err:
             raise TimeoutError(
                 f"Command timed out after {self.timeout}s: {' '.join(cmd)}"
-            )
+            ) from err
 
-    async def get_sample_conversation_id(self) -> Optional[str]:
+    async def get_sample_conversation_id(self) -> str | None:
         """Get a sample conversation ID for testing get_conversation tool."""
         try:
             # Try to get a conversation ID from the database
-            import sqlite3
             import os
+            import sqlite3
 
             # Look for database file
             possible_paths = [
@@ -350,7 +347,7 @@ class MCPToolTester:
         except Exception:
             return None
 
-    async def run_all_tests(self, specific_tool: Optional[str] = None) -> bool:
+    async def run_all_tests(self, specific_tool: str | None = None) -> bool:
         """Run all MCP tool tests."""
         self.log_section("MCP Tools Testing")
 
@@ -413,7 +410,7 @@ class MCPToolTester:
         print("=" * 80)
         return self.failed_tests == 0
 
-    def generate_report(self) -> Dict[str, Any]:
+    def generate_report(self) -> dict[str, Any]:
         """Generate comprehensive test report."""
         success_rate = (
             round((self.passed_tests / self.total_tests) * 100, 1)

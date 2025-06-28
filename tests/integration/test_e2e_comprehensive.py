@@ -23,7 +23,6 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Dict, Optional
 
 # Optional pytest import
 try:
@@ -43,7 +42,7 @@ try:
     from fast_intercom_mcp.intercom_client import IntercomClient
     from fast_intercom_mcp.mcp_server import FastIntercomMCPServer
     from fast_intercom_mcp.models import SyncStats
-    from fast_intercom_mcp.sync_service import SyncService, SyncManager
+    from fast_intercom_mcp.sync_service import SyncManager, SyncService
 
     DEPENDENCIES_AVAILABLE = True
 except ImportError as e:
@@ -64,13 +63,13 @@ class IntegrationTestRunner:
 
     def __init__(self):
         self.start_time = time.time()
-        self.db_path: Optional[str] = None
-        self.db: Optional[DatabaseManager] = None
-        self.intercom_client: Optional[IntercomClient] = None
-        self.sync_service: Optional[SyncService] = None
-        self.mcp_server: Optional[FastIntercomMCPServer] = None
-        self.test_results: Dict[str, any] = {}
-        self.performance_metrics: Dict[str, any] = {}
+        self.db_path: str | None = None
+        self.db: DatabaseManager | None = None
+        self.intercom_client: IntercomClient | None = None
+        self.sync_service: SyncService | None = None
+        self.mcp_server: FastIntercomMCPServer | None = None
+        self.test_results: dict[str, any] = {}
+        self.performance_metrics: dict[str, any] = {}
 
         # Test configuration
         self.target_days = 30  # Minimum days of data to sync
@@ -86,9 +85,8 @@ class IntegrationTestRunner:
         logger.info("🔧 Setting up test environment...")
 
         # Create temporary database
-        temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
-        self.db_path = temp_db.name
-        temp_db.close()
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as temp_db:
+            self.db_path = temp_db.name
 
         # Setup enhanced logging
         if DEPENDENCIES_AVAILABLE:

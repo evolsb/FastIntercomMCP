@@ -245,7 +245,7 @@ class TestMCPProtocol:
 
         # Create multiple concurrent tool calls
         tasks = []
-        for i in range(5):
+        for _ in range(5):
             task = asyncio.create_task(server._call_tool("get_server_status", {}))
             tasks.append(task)
 
@@ -308,7 +308,7 @@ class TestMCPProtocol:
             assert "properties" in schema
 
             # Check property definitions are complete
-            for prop_name, prop_def in schema["properties"].items():
+            for _prop_name, prop_def in schema["properties"].items():
                 assert "type" in prop_def
                 assert "description" in prop_def
                 assert len(prop_def["description"]) > 5  # Meaningful description

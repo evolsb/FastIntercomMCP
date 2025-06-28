@@ -3,16 +3,17 @@
 Comprehensive local sync test with detailed performance metrics
 """
 
-import time
-import os
-import sys
-import psutil
-import json
 import asyncio
-from datetime import datetime, timedelta
-import threading
+import json
+import os
 import subprocess
+import sys
+import threading
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
+
+import psutil
 
 # Add the project to the path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -112,9 +113,8 @@ def test_database_operations(config):
         db_size_mb = db_path.stat().st_size / 1024 / 1024
         print(f"✅ Database initialized in {init_time:.2f}s, size: {db_size_mb:.2f}MB")
         return db_size_mb
-    else:
-        print("❌ Database file not created")
-        return 0
+    print("❌ Database file not created")
+    return 0
 
 
 def test_api_connectivity():
@@ -135,9 +135,8 @@ def test_api_connectivity():
             total_count = response.get("total_count", 0)
             print(f"📊 Total conversations available: {total_count:,}")
             return True, total_count
-        else:
-            print("❌ API connection failed")
-            return False, 0
+        print("❌ API connection failed")
+        return False, 0
 
     except Exception as e:
         print(f"❌ API error: {e}")
@@ -248,9 +247,8 @@ def test_mcp_server_startup():
         if startup_detected or startup_time < 5:  # Consider quick exit as success
             print(f"✅ MCP server started in {startup_time:.2f}s")
             return startup_time
-        else:
-            print(f"⚠️ Server startup took {startup_time:.2f}s (may need investigation)")
-            return startup_time
+        print(f"⚠️ Server startup took {startup_time:.2f}s (may need investigation)")
+        return startup_time
 
     except Exception as e:
         print(f"❌ MCP server test failed: {e}")
@@ -262,7 +260,7 @@ def generate_performance_report(
 ):
     """Generate a comprehensive performance report"""
 
-    report = {
+    return {
         "test_info": {
             "timestamp": datetime.now().isoformat(),
             "test_duration_seconds": monitor.metrics["sync_duration"],
@@ -309,7 +307,6 @@ def generate_performance_report(
         },
     }
 
-    return report
 
 
 def _rate_performance(metrics):
@@ -347,12 +344,11 @@ def _rate_performance(metrics):
 
     if percentage >= 80:
         return "EXCELLENT"
-    elif percentage >= 60:
+    if percentage >= 60:
         return "GOOD"
-    elif percentage >= 40:
+    if percentage >= 40:
         return "FAIR"
-    else:
-        return "NEEDS_IMPROVEMENT"
+    return "NEEDS_IMPROVEMENT"
 
 
 def main():
