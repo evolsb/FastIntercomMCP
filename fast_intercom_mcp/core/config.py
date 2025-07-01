@@ -123,38 +123,43 @@ def setup_logging(log_level: str = "INFO"):
 
     try:
         result = setup_enhanced_logging(str(log_dir), log_level, enable_json)
-        
+
         # Setup progress broadcasting if enabled
         if os.getenv("FASTINTERCOM_PROGRESS_ENABLED", "").lower() in ("true", "1", "yes"):
             try:
-                from .progress import setup_global_progress_broadcaster
-                
                 # Generate session ID for this process
                 import time
+
+                from .progress import setup_global_progress_broadcaster
+
                 session_id = os.getenv("FASTINTERCOM_SESSION_ID", f"session-{int(time.time())}")
-                
+
                 progress_broadcaster = setup_global_progress_broadcaster(str(log_dir), session_id)
-                
+
                 # Configure based on environment
-                progress_broadcaster.console_enabled = not os.getenv("FASTINTERCOM_QUIET", "").lower() in ("true", "1", "yes")
-                
+                progress_broadcaster.console_enabled = os.getenv(
+                    "FASTINTERCOM_QUIET", ""
+                ).lower() not in ("true", "1", "yes")
+
                 result["progress_broadcaster"] = progress_broadcaster
                 result["progress_enabled"] = True
-                
+
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.info(f"Progress broadcasting enabled (session: {session_id})")
-                
+
             except Exception as e:
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.warning(f"Failed to setup progress broadcasting: {e}")
                 result["progress_enabled"] = False
         else:
             result["progress_enabled"] = False
-            
+
         return result
-        
+
     except (PermissionError, OSError):
         # Fallback to basic logging if setup fails
         import logging

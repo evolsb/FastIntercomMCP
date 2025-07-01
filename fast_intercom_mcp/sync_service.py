@@ -19,12 +19,10 @@ logger = logging.getLogger(__name__)
 # Import progress broadcasting (optional, graceful fallback)
 try:
     from .core.progress import (
-        get_progress_broadcaster,
         start_operation,
         update_progress,
-        complete_operation,
-        ProgressType
     )
+
     PROGRESS_AVAILABLE = True
 except ImportError:
     PROGRESS_AVAILABLE = False
@@ -335,22 +333,22 @@ class SyncService:
             start_operation(
                 "sync_period",
                 f"Conversation sync from {start_date.date()} to {end_date.date()}",
-                estimated_items=None  # Will be updated as we discover
+                estimated_items=None,  # Will be updated as we discover
             )
 
         try:
             start_time = time.time()
             logger.info(f"Starting period sync: {start_date} to {end_date}")
 
-            # Broadcast initial progress 
+            # Broadcast initial progress
             await self._broadcast_progress_simple(
                 f"🔄 Starting sync from {start_date.date()} to {end_date.date()}..."
             )
-            
+
             if PROGRESS_AVAILABLE:
                 update_progress(
                     f"Initializing sync for {start_date.date()} to {end_date.date()}",
-                    phase="initialization"
+                    phase="initialization",
                 )
 
             # We'll track progress dynamically as we go
