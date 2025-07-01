@@ -584,12 +584,12 @@ test_data_sync() {
 test_mcp_server() {
     log_section "Testing MCP Server"
     
-    log_info "Starting MCP server in test mode..."
+    log_info "Starting MCP server in stdio mode..."
     
-    # Start MCP server in background
+    # Start MCP server using mcp command for stdio mode
     # Configure logging for MCP server
     FASTINTERCOM_LOG_DIR="$TEST_WORKSPACE/logs" FASTINTERCOM_LOG_FILE="$TEST_WORKSPACE/logs/mcp-server.log" \
-    $CLI_CMD start --test-mode > "$TEST_WORKSPACE/logs/server.log" 2>&1 &
+    $CLI_CMD mcp > "$TEST_WORKSPACE/logs/server.log" 2>&1 &
     SERVER_PID=$!
     
     # Wait for server to start
@@ -605,31 +605,77 @@ test_mcp_server() {
     
     log_success "MCP server started (PID: $SERVER_PID)"
     
-    # Test MCP tools (placeholder - would use actual MCP client)
+    # Test MCP tools using the new test scripts
     log_info "Testing MCP tools..."
     
-    # Simulate MCP tool tests
+    local test_output=""
+    local test_script=""
     local tools_tested=0
     local tools_passed=0
+    local test_exit_code=0
     
-    # Test server status tool
-    if $CLI_CMD status > /dev/null 2>&1; then
-        tools_tested=$((tools_tested + 1))
-        tools_passed=$((tools_passed + 1))
-        log_success "Server status tool: PASSED"
+    # Try to use the full MCP test script first
+    if command -v poetry >/dev/null 2>&1 && poetry run python -c "import mcp" 2>/dev/null; then
+        log_info "Using test_mcp_server.py with full MCP library support..."
+        test_script="$SCRIPT_DIR/test_mcp_server.py"
+        test_output=$(FASTINTERCOM_CONFIG_DIR="$TEST_WORKSPACE/data" PYTHONPATH="$SCRIPT_DIR/../:$PYTHONPATH" \
+            poetry run python "$test_script" --test-mode 2>&1)
+        test_exit_code=$?
     else
-        tools_tested=$((tools_tested + 1))
-        log_error "Server status tool: FAILED"
+        log_info "MCP library not available, using test_mcp_server_simple.py..."
+        test_script="$SCRIPT_DIR/test_mcp_server_simple.py"
+        test_output=$(FASTINTERCOM_CONFIG_DIR="$TEST_WORKSPACE/data" PYTHONPATH="$SCRIPT_DIR/../:$PYTHONPATH" \
+            $PYTHON_CMD "$test_script" --test-mode 2>&1)
+        test_exit_code=$?
     fi
     
-    # Additional tool tests would go here
-    # For now, we'll simulate successful tool tests
-    tools_tested=$((tools_tested + 3))
-    tools_passed=$((tools_passed + 3))
+    # Parse test results
+    if [[ $test_exit_code -eq 0 ]]; then
+        # Try to extract JSON results
+        local json_results=$(echo "$test_output" | grep -E '^\{.*\}$' | tail -1)
+        
+        if [[ -n "$json_results" ]]; then
+            # Parse JSON results
+            tools_tested=$(echo "$json_results" | $PYTHON_CMD -c "import sys, json; data = json.load(sys.stdin); print(data.get('total_tests', 0))" 2>/dev/null || echo "0")
+            tools_passed=$(echo "$json_results" | $PYTHON_CMD -c "import sys, json; data = json.load(sys.stdin); print(data.get('passed_tests', 0))" 2>/dev/null || echo "0")
+            
+            # Show individual test results if available
+            echo "$json_results" | $PYTHON_CMD -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    for test in data.get('tests', []):
+        status = '✅' if test['passed'] else '❌'
+        print(f\"  {status} {test['name']}: {test.get('message', 'No message')}\")
+except:
+    pass
+" 2>/dev/null || true
+        else
+            # Fallback: count PASSED/FAILED in output
+            tools_passed=$(echo "$test_output" | grep -c "PASSED" || echo "0")
+            local tools_failed=$(echo "$test_output" | grep -c "FAILED" || echo "0")
+            tools_tested=$((tools_passed + tools_failed))
+            
+            # Show the test output for debugging
+            echo "$test_output" | grep -E "(PASSED|FAILED|Testing|Error)" || true
+        fi
+        
+        log_success "MCP tools test completed: $tools_passed/$tools_tested tools passed"
+    else
+        log_error "MCP test script failed with exit code: $test_exit_code"
+        echo "$test_output" | tail -20
+        tools_tested=1
+        tools_passed=0
+    fi
     
-    log_success "MCP tools test: $tools_passed/$tools_tested tools passed"
+    # Kill the server
+    if [[ -n "$SERVER_PID" ]] && kill -0 "$SERVER_PID" 2>/dev/null; then
+        kill "$SERVER_PID" 2>/dev/null || true
+        wait "$SERVER_PID" 2>/dev/null || true
+    fi
     
-    if [[ "$tools_passed" -eq "$tools_tested" ]]; then
+    # Update TEST_RESULTS
+    if [[ "$tools_passed" -eq "$tools_tested" ]] && [[ "$tools_tested" -gt 0 ]]; then
         TEST_RESULTS+=("mcp_server:PASSED:$tools_passed")
         return 0
     else

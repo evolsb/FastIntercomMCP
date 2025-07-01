@@ -310,6 +310,107 @@ python3 scripts/test_mcp_tools.py --verbose --output mcp_results.json
 python3 scripts/test_mcp_tools.py --timeout 60
 ```
 
+### test_mcp_server.py
+
+**Purpose**: Comprehensive MCP protocol testing with full server validation  
+**Usage**: `python3 scripts/test_mcp_server.py [OPTIONS]`
+
+**Features**:
+- Complete MCP server testing in stdio mode
+- Tests all 8 MCP tools with proper JSON-RPC communication
+- Validates response schemas and error handling
+- Supports verbose debugging and JSON output
+- Includes proper server lifecycle management
+- Tests tool listing, search, sync, and status operations
+- Comprehensive error handling and timeout management
+
+**Options**:
+- `--workspace PATH` - Test workspace directory (default: auto-generated)
+- `--verbose` - Enable verbose output with request/response details
+- `--timeout SECONDS` - Request timeout in seconds (default: 30)
+- `--output FILE` - Save results to JSON file
+- `--help` - Show detailed usage information
+
+**Environment Variables**:
+- `INTERCOM_ACCESS_TOKEN` - Required for API tests
+- `FASTINTERCOM_TEST_FORCE_SYNC` - Set to 'true' to test force_sync
+- `FASTINTERCOM_LOG_LEVEL` - Set logging level (DEBUG, INFO, WARNING, ERROR)
+
+**Examples**:
+```bash
+# Basic comprehensive test
+python3 scripts/test_mcp_server.py
+
+# Verbose test with custom workspace
+python3 scripts/test_mcp_server.py --verbose --workspace ~/.mcp-test
+
+# Test with results output
+python3 scripts/test_mcp_server.py --output mcp_test_results.json
+
+# Test with extended timeout
+python3 scripts/test_mcp_server.py --timeout 60 --verbose
+
+# Enable force sync testing
+FASTINTERCOM_TEST_FORCE_SYNC=true python3 scripts/test_mcp_server.py
+```
+
+**Tools Tested**:
+1. `tools/list` - Validate available tools
+2. `get_server_status` - Server health and status
+3. `get_data_info` - Database information
+4. `get_sync_status` - Synchronization status
+5. `search_conversations` - Multiple search scenarios
+6. `get_conversation` - Individual conversation retrieval
+7. `check_coverage` - Date range coverage analysis
+8. `sync_conversations` - Incremental sync operations
+9. `force_sync` - Full resync (when enabled)
+
+**Exit Codes**:
+- `0` - All tests passed
+- `1` - One or more tests failed
+- `130` - Interrupted by user (Ctrl+C)
+
+### test_mcp_server_simple.py
+
+**Purpose**: Simplified MCP testing without MCP library dependency  
+**Usage**: `python3 scripts/test_mcp_server_simple.py [OPTIONS]`
+
+**Features**:
+- Fallback testing for environments without MCP client library
+- Tests basic server functionality using subprocess
+- Validates CLI commands and database creation
+- Minimal dependencies (only standard library + sqlite3)
+- Quick validation of core functionality
+
+**Options**:
+- `--workspace PATH` - Test workspace directory (default: ~/.fast-intercom-mcp-test-simple)
+- `--help` - Show usage information
+
+**Tests Performed**:
+1. **CLI Status Test** - Verifies `fast-intercom-mcp status` command works
+2. **Server Startup Test** - Ensures MCP server can start and run
+3. **Database Creation Test** - Validates database file and schema creation
+
+**Examples**:
+```bash
+# Run simple validation tests
+python3 scripts/test_mcp_server_simple.py
+
+# Test with custom workspace
+python3 scripts/test_mcp_server_simple.py --workspace /tmp/mcp-test
+```
+
+**Use Cases**:
+- Quick validation in CI/CD environments
+- Testing when MCP client library isn't available
+- Rapid sanity checks during development
+- Minimal dependency testing scenarios
+
+**Exit Codes**:
+- `0` - All tests passed
+- `1` - One or more tests failed
+- `130` - Interrupted by user
+
 ### Performance Monitoring
 
 **Purpose**: Performance monitoring is integrated into test scripts  
@@ -352,6 +453,53 @@ sqlite3 ~/.fast-intercom-mcp/data.db "SELECT COUNT(*) FROM conversations;"
 
 # Run integration test with database validation
 ./scripts/run_integration_test.sh --verbose
+```
+
+## MCP Testing Integration
+
+### Choosing the Right MCP Test Script
+
+The repository includes three MCP testing scripts with different purposes:
+
+1. **test_mcp_tools.py** - Original MCP tool testing (requires MCP client library)
+   - Use when: You have the full MCP client library available
+   - Best for: Testing individual tools with the actual MCP protocol
+   
+2. **test_mcp_server.py** - Comprehensive MCP server testing
+   - Use when: You need full protocol validation and all tools tested
+   - Best for: Integration testing, CI/CD pipelines, pre-release validation
+   
+3. **test_mcp_server_simple.py** - Simplified testing without dependencies
+   - Use when: MCP client library isn't available or you need quick validation
+   - Best for: Rapid checks, minimal environments, fallback testing
+
+### Integration with Test Suite
+
+```bash
+# Run all MCP tests in sequence
+python3 scripts/test_mcp_server.py && \
+python3 scripts/test_mcp_tools.py && \
+python3 scripts/test_mcp_server_simple.py
+
+# Run appropriate test based on environment
+if command -v mcp >/dev/null 2>&1; then
+    # Full MCP client available
+    python3 scripts/test_mcp_server.py --verbose
+else
+    # Fallback to simple test
+    python3 scripts/test_mcp_server_simple.py
+fi
+```
+
+### MCP Test Results Aggregation
+
+```bash
+# Aggregate results from multiple MCP tests
+python3 scripts/test_mcp_server.py --output mcp_full_results.json
+python3 scripts/test_mcp_tools.py --output mcp_tools_results.json
+
+# Combine results (example)
+jq -s '.[0] * .[1]' mcp_full_results.json mcp_tools_results.json > combined_results.json
 ```
 
 ## Script Implementation Examples
