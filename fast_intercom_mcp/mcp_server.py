@@ -180,7 +180,8 @@ class FastIntercomMCPServer:
                 conn.row_factory = sqlite3.Row
 
                 # Query the most recent successful sync
-                result = conn.execute("""
+                result = conn.execute(
+                    """
                     SELECT
                         sync_completed_at,
                         coverage_start_date,
@@ -192,7 +193,8 @@ class FastIntercomMCPServer:
                     WHERE sync_status = 'completed'
                     ORDER BY sync_completed_at DESC
                     LIMIT 1
-                """).fetchone()
+                """
+                ).fetchone()
 
                 if not result:
                     response = {
@@ -248,7 +250,8 @@ class FastIntercomMCPServer:
                 conn.row_factory = sqlite3.Row
 
                 # Get the most recent sync info
-                result = conn.execute("""
+                result = conn.execute(
+                    """
                     SELECT
                         sync_completed_at,
                         coverage_start_date,
@@ -257,7 +260,8 @@ class FastIntercomMCPServer:
                     WHERE sync_status = 'completed'
                     ORDER BY sync_completed_at DESC
                     LIMIT 1
-                """).fetchone()
+                """
+                ).fetchone()
 
                 if not result:
                     response = {
@@ -317,13 +321,15 @@ class FastIntercomMCPServer:
                 conn.row_factory = sqlite3.Row
 
                 # Check for in-progress syncs
-                in_progress = conn.execute("""
+                in_progress = conn.execute(
+                    """
                     SELECT sync_started_at, coverage_start_date, coverage_end_date
                     FROM sync_metadata
                     WHERE sync_status = 'in_progress'
                     ORDER BY sync_started_at DESC
                     LIMIT 1
-                """).fetchone()
+                """
+                ).fetchone()
 
                 if in_progress:
                     duration_minutes = int(

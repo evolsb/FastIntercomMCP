@@ -53,7 +53,8 @@ class DatabaseManager:
             self._check_schema_compatibility(conn)
 
             # Enhanced conversations table with thread tracking
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS conversations (
                     id TEXT PRIMARY KEY,
                     created_at TIMESTAMP NOT NULL,
@@ -68,10 +69,12 @@ class DatabaseManager:
                     message_sequence_number INTEGER DEFAULT 0,
                     thread_last_checked TIMESTAMP
                 )
-            """)
+            """
+            )
 
             # Enhanced messages table with thread position tracking
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS messages (
                     id TEXT PRIMARY KEY,
                     conversation_id TEXT NOT NULL,
@@ -87,10 +90,12 @@ class DatabaseManager:
                     is_complete BOOLEAN DEFAULT TRUE,
                     FOREIGN KEY (conversation_id) REFERENCES conversations (id) ON DELETE CASCADE
                 )
-            """)
+            """
+            )
 
             # Sync periods tracking table
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS sync_periods (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     start_timestamp TIMESTAMP NOT NULL,
@@ -100,10 +105,12 @@ class DatabaseManager:
                     new_conversations INTEGER DEFAULT 0,
                     updated_conversations INTEGER DEFAULT 0
                 )
-            """)
+            """
+            )
 
             # Sync metadata table for tracking sync operations
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS sync_metadata (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     sync_started_at TIMESTAMP NOT NULL,
@@ -117,7 +124,8 @@ class DatabaseManager:
                     error_message TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """)
+            """
+            )
 
             # Index for quick lookups
             conn.execute(
@@ -126,7 +134,8 @@ class DatabaseManager:
             )
 
             # Request tracking for intelligent sync triggers
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS request_patterns (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timeframe_start TIMESTAMP NOT NULL,
@@ -135,10 +144,12 @@ class DatabaseManager:
                     data_freshness_seconds INTEGER, -- How old the data was when served
                     sync_triggered BOOLEAN DEFAULT FALSE
                 )
-            """)
+            """
+            )
 
             # Conversation-level sync state tracking
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS conversation_sync_state (
                     conversation_id TEXT PRIMARY KEY,
                     last_message_timestamp TIMESTAMP,
@@ -150,10 +161,12 @@ class DatabaseManager:
                     next_sync_needed BOOLEAN DEFAULT FALSE,
                     FOREIGN KEY (conversation_id) REFERENCES conversations (id) ON DELETE CASCADE
                 )
-            """)
+            """
+            )
 
             # Message thread tracking for handling message dependencies
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS message_threads (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     conversation_id TEXT NOT NULL,
@@ -165,22 +178,27 @@ class DatabaseManager:
                     FOREIGN KEY (child_message_id) REFERENCES messages (id) ON DELETE CASCADE,
                     UNIQUE(parent_message_id, child_message_id)
                 )
-            """)
+            """
+            )
 
             # Schema version tracking for future compatibility
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS schema_version (
                     version INTEGER PRIMARY KEY,
                     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     description TEXT
                 )
-            """)
+            """
+            )
 
             # Record current schema version
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT OR IGNORE INTO schema_version (version, description)
                 VALUES (2, 'Enhanced message tracking with conversation threads')
-            """)
+            """
+            )
 
             # Create indexes for performance
             conn.execute(
@@ -256,7 +274,8 @@ class DatabaseManager:
             )
 
             # Create useful views for sync operations
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE VIEW IF NOT EXISTS conversations_needing_sync AS
                 SELECT
                     c.id,
@@ -274,9 +293,11 @@ class DatabaseManager:
                     OR css.sync_status = 'incomplete'
                     OR css.next_sync_needed = TRUE
                     OR css.conversation_id IS NULL
-            """)
+            """
+            )
 
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE VIEW IF NOT EXISTS conversations_needing_incremental_sync AS
                 SELECT
                     c.id,
@@ -289,7 +310,8 @@ class DatabaseManager:
                     END as needs_sync
                 FROM conversations c
                 WHERE needs_sync = 1
-            """)
+            """
+            )
 
             conn.commit()
 
@@ -297,10 +319,12 @@ class DatabaseManager:
         """Check if existing database is compatible with current schema version."""
         try:
             # Check if schema_version table exists
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT name FROM sqlite_master
                 WHERE type='table' AND name='schema_version'
-            """)
+            """
+            )
             schema_table_exists = cursor.fetchone() is not None
 
             if schema_table_exists:
@@ -313,10 +337,12 @@ class DatabaseManager:
                     self._backup_and_reset_database(conn)
             else:
                 # Check if old database exists by looking for conversations table
-                cursor = conn.execute("""
+                cursor = conn.execute(
+                    """
                     SELECT name FROM sqlite_master
                     WHERE type='table' AND name='conversations'
-                """)
+                """
+                )
                 conversations_table_exists = cursor.fetchone() is not None
 
                 if conversations_table_exists:
@@ -340,10 +366,12 @@ class DatabaseManager:
         )
 
         # Get table names
-        cursor = conn.execute("""
+        cursor = conn.execute(
+            """
             SELECT name FROM sqlite_master
             WHERE type='table' AND name NOT LIKE 'sqlite_%'
-        """)
+        """
+        )
         tables = [row[0] for row in cursor.fetchall()]
 
         if tables:
@@ -509,13 +537,15 @@ class DatabaseManager:
 
             if query:
                 # Search in message bodies
-                conditions.append("""
+                conditions.append(
+                    """
                     c.id IN (
                         SELECT DISTINCT conversation_id
                         FROM messages
                         WHERE body LIKE ?
                     )
-                """)
+                """
+                )
                 params.append(f"%{query}%")
 
             where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
@@ -582,19 +612,23 @@ class DatabaseManager:
             total_messages = cursor.fetchone()["total"]
 
             # Get last sync time
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT MAX(last_synced) as last_sync
                 FROM conversations
-            """)
+            """
+            )
             last_sync_row = cursor.fetchone()
             last_sync = last_sync_row["last_sync"] if last_sync_row["last_sync"] else None
 
             # Get recent sync activity
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT * FROM sync_periods
                 ORDER BY last_synced DESC
                 LIMIT 5
-            """)
+            """
+            )
             recent_syncs = [dict(row) for row in cursor.fetchall()]
 
             # Get database file size
@@ -1062,10 +1096,12 @@ class DatabaseManager:
     def get_incomplete_conversations_count(self) -> int:
         """Get count of conversations with incomplete thread sync."""
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT COUNT(*) FROM conversations
                 WHERE thread_complete = FALSE
-            """)
+            """
+            )
             return cursor.fetchone()[0]
 
     def get_sync_progress_stats(self) -> dict[str, Any]:
@@ -1078,30 +1114,36 @@ class DatabaseManager:
             total_conversations = cursor.fetchone()["total"]
 
             # Complete vs incomplete threads
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT
                     SUM(CASE WHEN thread_complete = TRUE THEN 1 ELSE 0 END) as complete,
                     SUM(CASE WHEN thread_complete = FALSE THEN 1 ELSE 0 END) as incomplete
                 FROM conversations
-            """)
+            """
+            )
             thread_stats = cursor.fetchone()
 
             # Sync state breakdown
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT sync_status, COUNT(*) as count
                 FROM conversation_sync_state
                 GROUP BY sync_status
-            """)
+            """
+            )
             sync_status_breakdown = {row["sync_status"]: row["count"] for row in cursor.fetchall()}
 
             # Messages statistics
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT
                     COUNT(*) as total_messages,
                     COUNT(DISTINCT conversation_id) as conversations_with_messages,
                     AVG(CAST(substr(created_at, 1, 10) AS INTEGER)) as avg_message_age_days
                 FROM messages
-            """)
+            """
+            )
             message_stats = cursor.fetchone()
 
             return {

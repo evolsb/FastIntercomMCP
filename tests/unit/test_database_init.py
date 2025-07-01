@@ -53,11 +53,13 @@ class TestDatabaseInitialization:
         """Test that all required tables are created."""
         with sqlite3.connect(test_db_manager.db_path) as conn:
             # Get all table names
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT name FROM sqlite_master
                 WHERE type='table' AND name NOT LIKE 'sqlite_%'
                 ORDER BY name
-            """)
+            """
+            )
             tables = [row[0] for row in cursor.fetchall()]
 
             # Check expected tables exist
@@ -79,10 +81,12 @@ class TestDatabaseInitialization:
         """Test that performance indexes are created."""
         with sqlite3.connect(test_db_manager.db_path) as conn:
             # Get all index names
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT name FROM sqlite_master
                 WHERE type='index' AND name NOT LIKE 'sqlite_%'
-            """)
+            """
+            )
             indexes = [row[0] for row in cursor.fetchall()]
 
             # Check some key indexes exist
@@ -100,10 +104,12 @@ class TestDatabaseInitialization:
         """Test that database views are created."""
         with sqlite3.connect(test_db_manager.db_path) as conn:
             # Get all view names
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT name FROM sqlite_master
                 WHERE type='view'
-            """)
+            """
+            )
             views = [row[0] for row in cursor.fetchall()]
 
             # Check expected views exist
@@ -355,13 +361,15 @@ class TestDatabaseCompatibility:
         # Create old schema database
         with sqlite3.connect(temp_db_path) as conn:
             # Create old conversations table without thread tracking columns
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE conversations (
                     id TEXT PRIMARY KEY,
                     created_at TIMESTAMP,
                     updated_at TIMESTAMP
                 )
-            """)
+            """
+            )
             conn.commit()
 
         # Initialize DatabaseManager - should detect incompatible schema
