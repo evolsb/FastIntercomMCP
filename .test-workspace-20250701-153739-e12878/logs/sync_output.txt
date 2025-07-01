@@ -1,0 +1,43 @@
+🔄 Starting manual sync...
+📅 Force syncing last 1 days...
+2025-07-01 15:37:44,323 [INFO] fast_intercom_mcp.sync_service:sync_period:323 - Starting period sync: 2025-06-30 15:37:44.323602 to 2025-07-01 15:37:44.323602
+2025-07-01 15:37:44,323 [INFO] fast_intercom_mcp.sync_service:sync_period:343 - 📊 Sync Information:
+2025-07-01 15:37:44,323 [INFO] fast_intercom_mcp.sync_service:sync_period:344 -   Date range: 2025-06-30 to 2025-07-01 (1 day)
+2025-07-01 15:37:44,323 [INFO] fast_intercom_mcp.sync_service:sync_period:347 -   Timezone: Using local time
+2025-07-01 15:37:44,323 [INFO] fast_intercom_mcp.sync_service:sync_period:348 -   Sync mode: Activity-based (using 'updated_at' field)
+2025-07-01 15:37:44,323 [INFO] fast_intercom_mcp.sync_service:sync_period:349 -   Expected conversations with activity: ~50-150
+2025-07-01 15:37:44,323 [WARNING] fast_intercom_mcp.sync_service:sync_period:351 - ⚠️  NOTE: If seeing thousands instead of ~150/day, there may be:
+2025-07-01 15:37:44,323 [WARNING] fast_intercom_mcp.sync_service:sync_period:352 -   - Automated system updates (tags, assignments, etc.)
+2025-07-01 15:37:44,323 [WARNING] fast_intercom_mcp.sync_service:sync_period:353 -   - Timezone mismatches
+2025-07-01 15:37:44,323 [WARNING] fast_intercom_mcp.sync_service:sync_period:354 -   - API behavior differences
+2025-07-01 15:37:44,333 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:272 - 🔍 Searching for conversations UPDATED between Jun 30, 2025 and Jul 01, 2025
+2025-07-01 15:37:44,333 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:273 -     📝 This includes: NEW conversations + existing ones with recent activity (tags, assignments, etc.)
+2025-07-01 15:37:44,333 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:276 -     🔄 Making single API search query, then paging through results 150 at a time
+2025-07-01 15:37:44,333 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:304 - 📄 Fetching page 1...
+2025-07-01 15:38:03,197 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:326 - 📊 Intercom API reports: 243 conversations match our search criteria
+2025-07-01 15:38:03,197 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:329 -     🔍 Search criteria: conversations with ANY activity in date range
+2025-07-01 15:38:03,197 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:332 -     📥 Fetching these 243 conversations in pages of 150
+2025-07-01 15:38:03,197 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:342 - 📥 Page 1: Retrieved 150 conversations (150/243 - 61.7%)
+2025-07-01 15:38:03,198 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:399 - 📊 Processed: 88 kept, 62 filtered (Jul 01: 150)
+2025-07-01 15:38:03,199 [INFO] fast_intercom_mcp.sync_service:_update_progress_if_needed:132 - ⏳ Syncing: 88 conversations (88.0%) | Batch 1 | 4.7 conv/sec | ETA: 2s
+2025-07-01 15:38:03,200 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:439 - ⏭️  Continuing to page 2...
+2025-07-01 15:38:03,200 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:304 - 📄 Fetching page 2 (continuing)...
+2025-07-01 15:38:15,093 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:342 - 📥 Page 2: Retrieved 93 conversations (243/243 - 100.0%)
+2025-07-01 15:38:15,094 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:399 - 📊 Processed: 59 kept, 34 filtered (Jun 30: 35, Jul 01: 58)
+2025-07-01 15:38:15,094 [INFO] fast_intercom_mcp.sync_service:_update_progress_if_needed:132 - ⏳ Syncing: 147 conversations (100.0%) | Batch 1 | 4.8 conv/sec | ETA: 0s
+2025-07-01 15:38:15,094 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:426 - ✅ Search complete: Fetched all 243/243 conversations (100%)
+2025-07-01 15:38:15,095 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:467 - Sync summary for 2025-06-30 to 2025-07-01: Total=147, New=112, Updated=35
+2025-07-01 15:38:15,095 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:473 - Conversations by updated date:
+2025-07-01 15:38:15,095 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:475 -   2025-06-30: 18 conversations
+2025-07-01 15:38:15,095 [INFO] fast_intercom_mcp.intercom_client:fetch_conversations_for_period:475 -   2025-07-01: 129 conversations
+2025-07-01 15:38:15,095 [INFO] fast_intercom_mcp.sync_service:_update_progress_if_needed:132 - ⏳ Syncing: 147 conversations (100.0%) | Batch 1 | 4.8 conv/sec | ETA: 0s
+2025-07-01 15:38:15,101 [INFO] fast_intercom_mcp.sync_service:sync_period:438 - Period sync completed: 147 conversations, 147 messages in 30.8s
+✅ Sync completed!
+   - 147 conversations
+   - 147 new
+   - 0 updated
+   - 147 messages
+   - 30.8 seconds
+   📅 By date:
+     Jun 30: 18 conversations, 18 messages
+     Jul 01: 129 conversations, 129 messages

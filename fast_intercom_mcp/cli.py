@@ -576,6 +576,8 @@ def show(follow, filter, component, lines, since):
 @click.option("--count", "-n", default=20, type=int, help="Number of errors to show")
 @click.option("--summary", is_flag=True, help="Show error summary instead of details")
 def errors(since, count, summary):
+    # TODO: Implement since filtering
+    _ = since  # Acknowledge unused parameter
     """Show recent errors with analysis."""
     log_dir = Path.home() / ".fastintercom" / "logs"
 
@@ -710,9 +712,8 @@ def _format_log_line(line, level_filter=None, component_filter=None):
         return None
 
     # Apply level filter
-    if level_filter:
-        if f"[{level_filter.upper()}]" not in line:
-            return None
+    if level_filter and f"[{level_filter.upper()}]" not in line:
+        return None
 
     # Apply component filter
     if component_filter:
@@ -733,6 +734,8 @@ def _format_log_line(line, level_filter=None, component_filter=None):
 
 def _filter_logs_by_time(lines, since_str):
     """Filter log lines by time period."""
+    # TODO: Implement time-based filtering
+    _ = since_str  # Acknowledge unused parameter
     # This is a simplified version - in production you'd want more robust time parsing
     return lines  # For now, return all lines
 
@@ -778,7 +781,7 @@ def monitor():
 @monitor.command()
 @click.option("--refresh", "-r", default=5, type=int, help="Refresh interval in seconds")
 @click.option("--json", "output_json", is_flag=True, help="Output JSON for automation")
-def status(refresh, output_json):
+def dashboard(refresh, output_json):
     """Real-time status monitoring dashboard."""
     import json
     import time
@@ -976,6 +979,7 @@ def diagnose(show_config, test_api, test_database):
 
 def _get_system_status():
     """Get current system status data."""
+    import os
     import sqlite3
     from datetime import datetime
 
@@ -1029,6 +1033,8 @@ def _display_status_section(title, data):
 
 def _run_health_checks(verbose=False):
     """Run comprehensive health checks."""
+    _ = verbose  # Acknowledge unused parameter
+    import os
     import sqlite3
 
     import requests

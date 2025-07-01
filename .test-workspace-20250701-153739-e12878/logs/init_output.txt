@@ -1,0 +1,8 @@
+🚀 Initializing FastIntercom MCP Server...
+✅ Configuration saved to /Users/chris-home/Developer/fast-intercom-mcp/.test-workspace-20250701-153739-e12878/data/config.json
+2025-07-01 15:37:43,116 [INFO] fast_intercom_mcp.transport.optimization:_create_optimized_client:321 - Created optimized HTTP client with connection pooling
+✅ Connection to Intercom API successful
+2025-07-01 15:37:43,309 [INFO] fast_intercom_mcp.intercom_client:get_app_id:73 - Retrieved app ID: sc3pepw3
+📱 App ID: sc3pepw3
+📁 Database initialized at /Users/chris-home/Developer/fast-intercom-mcp/.test-workspace-20250701-153739-e12878/data/data.db
+Would you like to sync 0 days of conversation history now? [y/N]: 

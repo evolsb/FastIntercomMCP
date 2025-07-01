@@ -1,0 +1,10 @@
+{
+  "database_path": null,
+  "log_level": "INFO",
+  "max_sync_age_minutes": 5,
+  "background_sync_interval_minutes": 10,
+  "initial_sync_days": 0,
+  "connection_pool_size": 5,
+  "api_timeout_seconds": 300,
+  "sync_mode": "activity"
+}

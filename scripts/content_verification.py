@@ -4,7 +4,7 @@ Content Verification Script for FastIntercom MCP
 
 This script analyzes synced conversation data to verify:
 1. Customer vs admin message filtering is working correctly
-2. Message content quality and completeness  
+2. Message content quality and completeness
 3. Conversation metadata accuracy
 4. Proper handling of different conversation types
 
@@ -28,7 +28,7 @@ from fast_intercom_mcp import Config, DatabaseManager
 from fast_intercom_mcp.models import Conversation, Message
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -49,11 +49,11 @@ class ContentVerifier:
     async def verify_content(self, days: int = 1, detailed: bool = False) -> dict[str, Any]:
         """
         Perform comprehensive content verification.
-        
+
         Args:
             days: Number of recent days to analyze
             detailed: Whether to include detailed examples and breakdowns
-            
+
         Returns:
             Verification results with quality metrics
         """
@@ -95,45 +95,51 @@ class ContentVerifier:
 
         conversations = []
         try:
-            cursor = conn.execute("""
-                SELECT * FROM conversations 
-                WHERE updated_at >= ? 
+            cursor = conn.execute(
+                """
+                SELECT * FROM conversations
+                WHERE updated_at >= ?
                 ORDER BY updated_at DESC
-            """, (cutoff_date.timestamp(),))
+            """,
+                (cutoff_date.timestamp(),),
+            )
 
             for row in cursor:
                 # Get messages for this conversation
-                msg_cursor = conn.execute("""
-                    SELECT * FROM messages 
-                    WHERE conversation_id = ? 
+                msg_cursor = conn.execute(
+                    """
+                    SELECT * FROM messages
+                    WHERE conversation_id = ?
                     ORDER BY created_at ASC
-                """, (row['id'],))
+                """,
+                    (row["id"],),
+                )
 
                 messages = []
                 for msg_row in msg_cursor:
                     message = Message(
-                        id=msg_row['id'],
-                        conversation_id=msg_row['conversation_id'],
-                        author_type=msg_row['author_type'],
-                        author_name=msg_row['author_name'],
-                        body=msg_row['body'],
-                        created_at=datetime.fromtimestamp(msg_row['created_at']),
-                        intercom_url=msg_row['intercom_url']
+                        id=msg_row["id"],
+                        conversation_id=msg_row["conversation_id"],
+                        author_type=msg_row["author_type"],
+                        author_name=msg_row["author_name"],
+                        body=msg_row["body"],
+                        created_at=datetime.fromtimestamp(msg_row["created_at"]),
+                        intercom_url=msg_row["intercom_url"],
                     )
                     messages.append(message)
 
                 conversation = Conversation(
-                    id=row['id'],
-                    created_at=datetime.fromtimestamp(row['created_at']),
-                    updated_at=datetime.fromtimestamp(row['updated_at']),
-                    state=row['state'],
-                    subject=row['subject'],
+                    id=row["id"],
+                    created_at=datetime.fromtimestamp(row["created_at"]),
+                    updated_at=datetime.fromtimestamp(row["updated_at"]),
+                    state=row["state"],
+                    subject=row["subject"],
                     messages=messages,
-                    tags=json.loads(row['tags']) if row['tags'] else [],
-                    priority=row['priority'],
-                    assignee_name=row['assignee_name'],
-                    team_name=row['team_name'],
-                    intercom_url=row['intercom_url']
+                    tags=json.loads(row["tags"]) if row["tags"] else [],
+                    priority=row["priority"],
+                    assignee_name=row["assignee_name"],
+                    team_name=row["team_name"],
+                    intercom_url=row["intercom_url"],
                 )
                 conversations.append(conversation)
 
@@ -142,7 +148,9 @@ class ContentVerifier:
 
         return conversations
 
-    async def _analyze_messages(self, conversations: list[Conversation], detailed: bool) -> dict[str, Any]:
+    async def _analyze_messages(
+        self, conversations: list[Conversation], detailed: bool
+    ) -> dict[str, Any]:
         """Analyze message content and types."""
         total_messages = 0
         author_types = Counter()
@@ -158,7 +166,7 @@ class ContentVerifier:
 
                 if msg.body:
                     message_lengths.append(len(msg.body))
-                    if msg.author_type == 'user':
+                    if msg.author_type == "user":
                         customer_messages.append(msg)
                     else:
                         admin_messages.append(msg)
@@ -175,22 +183,32 @@ class ContentVerifier:
             "average_message_length": round(avg_length, 1),
             "customer_messages": len(customer_messages),
             "admin_messages": len(admin_messages),
-            "customer_vs_admin_ratio": round(len(customer_messages) / max(len(admin_messages), 1), 2),
+            "customer_vs_admin_ratio": round(
+                len(customer_messages) / max(len(admin_messages), 1), 2
+            ),
         }
 
         if detailed:
             analysis["sample_customer_messages"] = [
-                {"author": msg.author_name, "body": msg.body[:100] + "..." if len(msg.body) > 100 else msg.body}
+                {
+                    "author": msg.author_name,
+                    "body": msg.body[:100] + "..." if len(msg.body) > 100 else msg.body,
+                }
                 for msg in customer_messages[:3]
             ]
             analysis["sample_admin_messages"] = [
-                {"author": msg.author_name, "body": msg.body[:100] + "..." if len(msg.body) > 100 else msg.body}
+                {
+                    "author": msg.author_name,
+                    "body": msg.body[:100] + "..." if len(msg.body) > 100 else msg.body,
+                }
                 for msg in admin_messages[:3]
             ]
 
         return analysis
 
-    async def _analyze_conversations(self, conversations: list[Conversation], detailed: bool) -> dict[str, Any]:
+    async def _analyze_conversations(
+        self, conversations: list[Conversation], detailed: bool
+    ) -> dict[str, Any]:
         """Analyze conversation metadata and structure."""
         states = Counter()
         priorities = Counter()
@@ -202,7 +220,7 @@ class ContentVerifier:
 
         for conv in conversations:
             states[conv.state] += 1
-            priorities[conv.priority or 'none'] += 1
+            priorities[conv.priority or "none"] += 1
 
             if conv.subject:
                 has_subject += 1
@@ -215,9 +233,11 @@ class ContentVerifier:
 
             conversation_lengths.append(len(conv.messages))
 
-        avg_messages_per_conv = sum(conversation_lengths) / len(conversation_lengths) if conversation_lengths else 0
+        avg_messages_per_conv = (
+            sum(conversation_lengths) / len(conversation_lengths) if conversation_lengths else 0
+        )
 
-        analysis = {
+        return {
             "state_distribution": dict(states),
             "priority_distribution": dict(priorities),
             "metadata_completeness": {
@@ -229,7 +249,6 @@ class ContentVerifier:
             "average_messages_per_conversation": round(avg_messages_per_conv, 1),
         }
 
-        return analysis
 
     async def _calculate_quality_metrics(self, conversations: list[Conversation]) -> dict[str, Any]:
         """Calculate data quality metrics."""
@@ -240,22 +259,23 @@ class ContentVerifier:
 
         # Check for conversations with only admin messages
         admin_only_conversations = sum(
-            1 for conv in conversations
-            if conv.messages and all(msg.author_type != 'user' for msg in conv.messages)
+            1
+            for conv in conversations
+            if conv.messages and all(msg.author_type != "user" for msg in conv.messages)
         )
 
         # Check for conversations with customer messages
         customer_conversations = sum(
-            1 for conv in conversations
-            if any(msg.author_type == 'user' for msg in conv.messages)
+            1 for conv in conversations if any(msg.author_type == "user" for msg in conv.messages)
         )
 
         # Check for recent customer activity
         now = datetime.now()
         recent_customer_activity = sum(
-            1 for conv in conversations
+            1
+            for conv in conversations
             if any(
-                msg.author_type == 'user' and (now - msg.created_at).days <= 1
+                msg.author_type == "user" and (now - msg.created_at).days <= 1
                 for msg in conv.messages
             )
         )
@@ -272,10 +292,12 @@ class ContentVerifier:
             },
             "quality_score": self._calculate_quality_score(
                 empty_conversations, admin_only_conversations, customer_conversations, total_convs
-            )
+            ),
         }
 
-    def _calculate_quality_score(self, empty: int, admin_only: int, customer: int, total: int) -> float:
+    def _calculate_quality_score(
+        self, empty: int, admin_only: int, customer: int, total: int
+    ) -> float:
         """Calculate overall quality score (0-100)."""
         if total == 0:
             return 0.0
@@ -292,10 +314,9 @@ class ContentVerifier:
         """Verify that filtering is working correctly."""
         total_messages = sum(len(conv.messages) for conv in conversations)
         customer_messages = sum(
-            sum(1 for msg in conv.messages if msg.author_type == 'user')
-            for conv in conversations
+            sum(1 for msg in conv.messages if msg.author_type == "user") for conv in conversations
         )
-        admin_messages = total_messages - customer_messages
+        total_messages - customer_messages
 
         # Check if we have a reasonable balance
         customer_ratio = customer_messages / total_messages if total_messages > 0 else 0
@@ -311,7 +332,7 @@ class ContentVerifier:
             "customer_message_ratio": round(customer_ratio, 3),
             "admin_message_ratio": round(1 - customer_ratio, 3),
             "filtering_assessment": filtering_quality,
-            "recommendation": self._get_filtering_recommendation(customer_ratio)
+            "recommendation": self._get_filtering_recommendation(customer_ratio),
         }
 
     def _get_filtering_recommendation(self, customer_ratio: float) -> str:
@@ -330,12 +351,20 @@ class ContentVerifier:
         """Get examples for detailed analysis."""
         # Find interesting examples
         customer_conv = next(
-            (conv for conv in conversations if any(msg.author_type == 'user' for msg in conv.messages)),
-            None
+            (
+                conv
+                for conv in conversations
+                if any(msg.author_type == "user" for msg in conv.messages)
+            ),
+            None,
         )
         admin_conv = next(
-            (conv for conv in conversations if all(msg.author_type != 'user' for msg in conv.messages)),
-            None
+            (
+                conv
+                for conv in conversations
+                if all(msg.author_type != "user" for msg in conv.messages)
+            ),
+            None,
         )
 
         examples = {}
@@ -347,8 +376,9 @@ class ContentVerifier:
                 "message_count": len(customer_conv.messages),
                 "customer_messages": [
                     {"author": msg.author_name, "body": msg.body[:100] + "..."}
-                    for msg in customer_conv.messages[:3] if msg.author_type == 'user'
-                ]
+                    for msg in customer_conv.messages[:3]
+                    if msg.author_type == "user"
+                ],
             }
 
         if admin_conv:
@@ -359,7 +389,7 @@ class ContentVerifier:
                 "admin_messages": [
                     {"author": msg.author_name, "body": msg.body[:100] + "..."}
                     for msg in admin_conv.messages[:3]
-                ]
+                ],
             }
 
         return examples
@@ -392,7 +422,7 @@ class ContentVerifier:
             "quality_score": quality_score,
             "customer_ratio": customer_ratio,
             "issues_found": issues,
-            "recommendation": self._get_overall_recommendation(health, issues)
+            "recommendation": self._get_overall_recommendation(health, issues),
         }
 
     def _get_overall_recommendation(self, health: str, issues: list[str]) -> str:
@@ -411,8 +441,12 @@ async def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Verify FastIntercom MCP content quality")
-    parser.add_argument("--days", type=int, default=1, help="Number of days to analyze (default: 1)")
-    parser.add_argument("--detailed", action="store_true", help="Include detailed examples and breakdowns")
+    parser.add_argument(
+        "--days", type=int, default=1, help="Number of days to analyze (default: 1)"
+    )
+    parser.add_argument(
+        "--detailed", action="store_true", help="Include detailed examples and breakdowns"
+    )
     parser.add_argument("--database", type=str, help="Database path (default: from config)")
     parser.add_argument("--output", type=str, help="Save results to JSON file")
 
@@ -423,9 +457,9 @@ async def main():
         results = await verifier.verify_content(args.days, args.detailed)
 
         # Print summary
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("📊 CONTENT VERIFICATION RESULTS")
-        print("="*60)
+        print("=" * 60)
 
         summary = results["summary"]
         print(f"📈 Analyzed: {summary['total_conversations']} conversations ({args.days} days)")
@@ -435,7 +469,7 @@ async def main():
         print(f"📊 Quality Score: {assessment['quality_score']}/100")
         print(f"👥 Customer Ratio: {assessment['customer_ratio']:.1%}")
 
-        if assessment['issues_found']:
+        if assessment["issues_found"]:
             print(f"⚠️  Issues: {', '.join(assessment['issues_found'])}")
 
         print(f"\n{assessment['recommendation']}")
@@ -453,12 +487,12 @@ async def main():
 
         # Save to file if requested
         if args.output:
-            with open(args.output, 'w') as f:
+            with open(args.output, "w") as f:
                 json.dump(results, f, indent=2, default=str)
             print(f"\n💾 Results saved to: {args.output}")
 
         # Exit code based on health
-        if assessment['overall_health'] in ['excellent', 'good']:
+        if assessment["overall_health"] in ["excellent", "good"]:
             sys.exit(0)
         else:
             sys.exit(1)
