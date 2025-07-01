@@ -153,7 +153,7 @@ class APICache:
 
             return True
 
-    def invalidate(self, pattern: str = None):
+    def invalidate(self, pattern: str | None = None) -> None:
         """Invalidate cache entries by pattern or all if no pattern."""
         with self._lock:
             if pattern is None:
@@ -332,7 +332,7 @@ class ConnectionPool:
 class APIOptimizer:
     """Main optimization coordinator combining all optimization features."""
 
-    def __init__(self, config: OptimizationConfig = None):
+    def __init__(self, config: OptimizationConfig | None = None):
         self.config = config or OptimizationConfig()
         self.metrics = PerformanceMetrics()
 

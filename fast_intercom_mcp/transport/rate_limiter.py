@@ -55,7 +55,7 @@ class RateLimitMetrics:
 class AdaptiveRateLimiter:
     """Intelligent rate limiter with adaptive backoff strategies."""
 
-    def __init__(self, config: RateLimitConfig = None):
+    def __init__(self, config: RateLimitConfig | None = None):
         self.config = config or RateLimitConfig()
         self.metrics = RateLimitMetrics()
 
@@ -75,9 +75,9 @@ class AdaptiveRateLimiter:
         self._adaptive_adjustment_interval = 300  # 5 minutes
 
         # Performance monitoring
-        self._performance_callbacks: list[Callable] = []
+        self._performance_callbacks: list[Callable[[RateLimitMetrics], None]] = []
 
-    def add_performance_callback(self, callback: Callable[[RateLimitMetrics], None]):
+    def add_performance_callback(self, callback: Callable[[RateLimitMetrics], None]) -> None:
         """Add a callback for performance monitoring."""
         self._performance_callbacks.append(callback)
 
