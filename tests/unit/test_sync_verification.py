@@ -15,7 +15,15 @@ Tests cover:
 import asyncio
 import contextlib
 import sqlite3
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+
+try:
+    from datetime import UTC
+except ImportError:
+    # Python < 3.11 compatibility
+    from datetime import timezone
+
+    UTC = timezone.utc
 from unittest.mock import AsyncMock
 
 import pytest
@@ -90,10 +98,12 @@ class TestInitialSyncVerification:
             assert message_count > 0, "No messages found in database"
 
             # Verify message data integrity
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT id, author_type, body, created_at, conversation_id
                 FROM messages LIMIT 1
-            """)
+            """
+            )
             sample_msg = cursor.fetchone()
             assert sample_msg is not None, "No messages found"
             assert sample_msg[0] is not None, "Message ID is None"
@@ -236,9 +246,11 @@ class TestMessageCompleteness:
         # Check message ordering for conversations that have messages
         with sqlite3.connect(database_manager.db_path) as conn:
             # First, get all conversations that actually have messages in the database
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT DISTINCT conversation_id FROM messages
-            """)
+            """
+            )
             stored_conv_ids = [row[0] for row in cursor.fetchall()]
 
             assert len(stored_conv_ids) > 0, "No conversations with messages found in database"
@@ -276,12 +288,14 @@ class TestMessageCompleteness:
 
         # Check for duplicate messages
         with sqlite3.connect(database_manager.db_path) as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT id, COUNT(*) as count
                 FROM messages
                 GROUP BY id
                 HAVING count > 1
-            """)
+            """
+            )
 
             duplicates = cursor.fetchall()
             assert len(duplicates) == 0, f"Found duplicate messages: {duplicates}"
@@ -363,12 +377,14 @@ class TestIncrementalSyncEfficiency:
             assert sync_period_count > 0, "Sync period was not recorded"
 
             # Check sync period data
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT start_timestamp, end_timestamp, last_synced
                 FROM sync_periods
                 ORDER BY last_synced DESC
                 LIMIT 1
-            """)
+            """
+            )
             sync_record = cursor.fetchone()
             assert sync_record is not None, "No sync period record found"
             assert sync_record[0] is not None, "Start timestamp is None"
@@ -450,13 +466,15 @@ class TestConversationThreadCompleteness:
 
         # Check that each conversation has at least one message
         with sqlite3.connect(database_manager.db_path) as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT c.id, COUNT(m.id) as message_count
                 FROM conversations c
                 LEFT JOIN messages m ON c.id = m.conversation_id
                 GROUP BY c.id
                 HAVING message_count = 0
-            """)
+            """
+            )
 
             conversations_without_messages = cursor.fetchall()
             assert (
@@ -479,10 +497,12 @@ class TestSyncDataIntegrity:
 
         # Check customer email associations
         with sqlite3.connect(database_manager.db_path) as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT id, customer_email FROM conversations
                 WHERE customer_email IS NOT NULL
-            """)
+            """
+            )
             conversations_with_emails = cursor.fetchall()
 
             assert len(conversations_with_emails) > 0, "No conversations with customer emails found"
