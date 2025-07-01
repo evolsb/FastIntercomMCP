@@ -8,49 +8,53 @@ from fast_intercom_mcp.config import Config
 
 def test_config_defaults():
     """Test Config default values."""
-    config = Config()
-    assert config.intercom_token == ""
-    assert config.db_path == "~/.config/fast-intercom-mcp/intercom_data.db"
+    config = Config(intercom_token="test_token")  # Required field
+    assert config.intercom_token == "test_token"
+    assert config.database_path is None  # Default
     assert config.initial_sync_days == 30
-    assert config.mcp_host == "localhost"
-    assert config.mcp_port == 8080
     assert config.log_level == "INFO"
+    assert config.max_sync_age_minutes == 5
+    assert config.background_sync_interval_minutes == 10
 
 
 def test_config_from_env(monkeypatch):
     """Test Config loading from environment variables."""
-    monkeypatch.setenv("INTERCOM_TOKEN", "test_token_123")
-    monkeypatch.setenv("DB_PATH", "/tmp/test.db")
-    monkeypatch.setenv("INITIAL_SYNC_DAYS", "7")
-    monkeypatch.setenv("MCP_HOST", "0.0.0.0")
-    monkeypatch.setenv("MCP_PORT", "9000")
-    monkeypatch.setenv("LOG_LEVEL", "DEBUG")
+    monkeypatch.setenv("INTERCOM_ACCESS_TOKEN", "test_token_123")
+    monkeypatch.setenv("FASTINTERCOM_DB_PATH", "/tmp/test.db")
+    monkeypatch.setenv("FASTINTERCOM_INITIAL_SYNC_DAYS", "7")
+    monkeypatch.setenv("FASTINTERCOM_LOG_LEVEL", "DEBUG")
+    monkeypatch.setenv("FASTINTERCOM_MAX_SYNC_AGE_MINUTES", "10")
 
-    config = Config.from_env()
+    config = Config.load()
     assert config.intercom_token == "test_token_123"
-    assert config.db_path == "/tmp/test.db"
+    assert config.database_path == "/tmp/test.db"
     assert config.initial_sync_days == 7
-    assert config.mcp_host == "0.0.0.0"
-    assert config.mcp_port == 9000
     assert config.log_level == "DEBUG"
+    assert config.max_sync_age_minutes == 10
 
 
-def test_config_save_load():
+def test_config_save_load(monkeypatch):
     """Test saving and loading config from file."""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         config_path = Path(f.name)
 
     try:
-        # Create and save config
-        config = Config(
-            intercom_token="save_test_token", db_path="/tmp/save_test.db", initial_sync_days=14, log_level="WARNING"
-        )
-        config.save(config_path)
+        # Set required env var for loading
+        monkeypatch.setenv("INTERCOM_ACCESS_TOKEN", "save_test_token")
 
-        # Load config
-        loaded_config = Config.load(config_path)
-        assert loaded_config.intercom_token == "save_test_token"
-        assert loaded_config.db_path == "/tmp/save_test.db"
+        # Create and save config (token won't be saved to file)
+        config = Config(
+            intercom_token="save_test_token",
+            database_path="/tmp/save_test.db",
+            initial_sync_days=14,
+            log_level="WARNING",
+        )
+        config.save(str(config_path))
+
+        # Load config - token comes from env
+        loaded_config = Config.load(str(config_path))
+        assert loaded_config.intercom_token == "save_test_token"  # From env
+        assert loaded_config.database_path == "/tmp/save_test.db"
         assert loaded_config.initial_sync_days == 14
         assert loaded_config.log_level == "WARNING"
     finally:
