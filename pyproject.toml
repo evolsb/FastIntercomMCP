@@ -149,11 +149,11 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["src"]
+source = ["fast_intercom_mcp"]
 omit = [
     "tests/*",
-    "src/__init__.py",
-    "src/*/__init__.py",
+    "fast_intercom_mcp/__init__.py",
+    "fast_intercom_mcp/__main__.py",
 ]
 
 [tool.coverage.report]

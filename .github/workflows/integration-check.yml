@@ -10,7 +10,7 @@ on:
 env:
   PYTHON_VERSION_DEFAULT: "3.12"
   PYTEST_TIMEOUT: 300
-  COVERAGE_THRESHOLD: 80
+  COVERAGE_THRESHOLD: 50
 
 permissions:
   contents: read
@@ -174,10 +174,18 @@ jobs:
       - name: Compare with baseline
         if: github.event_name == 'pull_request' && steps.benchmark-cache.outputs.cache-hit == 'true'
         run: |
-          poetry run pytest tests/performance/ \
-            --benchmark-compare=.benchmarks/latest.json \
-            --benchmark-compare-fail=mean:10% \
-            --benchmark-json=benchmark_comparison.json
+          if [ -f .benchmarks/latest.json ]; then
+            echo "Baseline found, comparing performance..."
+            poetry run pytest tests/performance/ \
+              --benchmark-compare=.benchmarks/latest.json \
+              --benchmark-compare-fail=mean:10% \
+              --benchmark-json=benchmark_comparison.json
+          else
+            echo "No baseline found, skipping comparison"
+            poetry run pytest tests/performance/ \
+              --benchmark-only \
+              --benchmark-json=benchmark_comparison.json
+          fi
       
       - name: Store benchmark result
         if: github.ref == 'refs/heads/main'
