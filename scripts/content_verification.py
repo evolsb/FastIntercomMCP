@@ -24,8 +24,8 @@ from typing import Any
 # Add the project root to Python path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from fast_intercom_mcp import Config, DatabaseManager
-from fast_intercom_mcp.models import Conversation, Message
+from fast_intercom_mcp import Config, DatabaseManager  # noqa: E402
+from fast_intercom_mcp.models import Conversation, Message  # noqa: E402
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -248,7 +248,6 @@ class ContentVerifier:
             },
             "average_messages_per_conversation": round(avg_messages_per_conv, 1),
         }
-
 
     async def _calculate_quality_metrics(self, conversations: list[Conversation]) -> dict[str, Any]:
         """Calculate data quality metrics."""

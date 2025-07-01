@@ -150,8 +150,7 @@ def sync_service(database_manager, mock_intercom_client):
     """Provide a SyncService instance for testing."""
     service = SyncService(database_manager, mock_intercom_client)
     yield service
-    # Ensure proper cleanup
-    service.stop()
+    # No cleanup needed for unit tests as background sync is not started
 
 
 @pytest.fixture

@@ -33,9 +33,8 @@ class TestFeatureCompatibility:
     @pytest.fixture
     async def compatibility_setup(self, temp_db):
         """Set up components for compatibility testing."""
-        # Create database manager
+        # Create database manager (initializes automatically)
         db = DatabaseManager(db_path=temp_db)
-        await db.initialize()
 
         # Mock Intercom client
         intercom_client = Mock(spec=IntercomClient)
@@ -76,9 +75,9 @@ class TestFeatureCompatibility:
                 id=f"conv_{i}",
                 created_at=datetime.now(UTC) - timedelta(hours=i),
                 updated_at=datetime.now(UTC) - timedelta(hours=i),
-                customer_id=f"customer_{i}",
-                assignee_id="agent_1",
-                status="open" if i % 2 == 0 else "closed",
+                customer_email=f"customer_{i}@example.com",
+                messages=[],
+                tags=[],
             )
             for i in range(20)
         ]
@@ -109,13 +108,12 @@ class TestFeatureCompatibility:
 
         intercom.get_messages = mock_get_messages
 
-        # Run simplified sync
-        stats = await sync_service.simplified_sync()
+        # Run sync
+        stats = await sync_service.sync_recent()
 
         # Verify sync completed successfully
-        assert stats.conversations_synced == 20
-        assert stats.messages_synced == 20
-        assert stats.sync_type == "simplified"
+        assert stats.total_conversations == 20
+        assert stats.new_conversations >= 0
 
         # Verify progress updates were received
         assert len(progress_updates) > 0

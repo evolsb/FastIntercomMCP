@@ -35,7 +35,7 @@ from typing import Any
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from fast_intercom_mcp.core.config import setup_logging
+from fast_intercom_mcp.core.config import setup_logging  # noqa: E402
 
 # Set up enhanced logging
 log_level = os.getenv("FASTINTERCOM_LOG_LEVEL", "INFO")
@@ -191,8 +191,8 @@ class MCPServerTester:
             response_line = await asyncio.wait_for(
                 self.server_process.stdout.readline(), timeout=self.timeout
             )
-        except TimeoutError:
-            raise TimeoutError(f"No response after {self.timeout}s for request: {method}")
+        except TimeoutError as e:
+            raise TimeoutError(f"No response after {self.timeout}s for request: {method}") from e
 
         if not response_line:
             raise RuntimeError("No response from server")
@@ -400,7 +400,7 @@ class MCPServerTester:
                         conversations = data.get("conversations", [])
                         if conversations and "id" in conversations[0]:
                             return conversations[0]["id"]
-                    except:
+                    except (json.JSONDecodeError, KeyError, IndexError):
                         pass
 
             # Fallback: check database directly

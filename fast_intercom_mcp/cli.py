@@ -444,8 +444,12 @@ def sync(ctx, force, days):
 
                 # Add progress callback for better UX
                 def progress_callback(current: int, total: int, elapsed: float):
-                    # This will be called by sync_service
-                    pass
+                    # Show progress in CLI
+                    if total > 0:
+                        percentage = (current / total) * 100
+                        click.echo(
+                            f"   Progress: {current}/{total} ({percentage:.1f}%) - {elapsed:.1f}s"
+                        )
 
                 stats = await sync_service.sync_period(start_date, now, progress_callback)
             else:
