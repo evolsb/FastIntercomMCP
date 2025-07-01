@@ -30,7 +30,13 @@ git worktree add ../fast-intercom-mcp-worktrees/issue-{number} -b {type}/issue-{
 # 3. Work in the worktree (never in main repo)
 cd ../fast-intercom-mcp-worktrees/issue-{number}
 
-# 4. After implementation: commit, push, create PR
+# 4. Set up environment (CRITICAL - required for testing)
+ln -s ../../fast-intercom-mcp/.env .env              # Link to main .env file
+ln -s ../../fast-intercom-mcp/CLAUDE.md CLAUDE.md    # Link to main CLAUDE.md (single source of truth)
+poetry install                                        # Install dependencies
+poetry run python -c "from fast_intercom_mcp import Config; print('✅ Environment ready')"
+
+# 5. After implementation: commit, push, create PR
 git add . && git commit -m "Fix #{number}: Brief description" 
 git push -u origin {type}/issue-{number}-description
 gh pr create --title "Fix #{number}: Brief description" --body "$(cat <<'EOF'
@@ -47,11 +53,30 @@ Closes #{number}
 EOF
 )"
 
-# 5. Update issue status and mark tasks complete
+# 6. Update issue status and mark tasks complete
 gh issue edit {number} --remove-label "status-in-progress" --add-label "status-awaiting-qc"
 ```
 
 ## Testing Commands
+
+### Test Progression for Pagination Changes
+
+**MANDATORY: Follow this exact order for testing pagination/sync changes:**
+
+```bash
+# Simple one-liner: sync data and then verify it (3-7 minutes total)
+./scripts/run_integration_test.sh --days 1 --quick && poetry run python scripts/content_verification.py --database .test-workspace-*/data/data.db --days 1 --detailed
+
+# OR step-by-step:
+# 1. First: Run integration test to populate test data (2-5 minutes)
+./scripts/run_integration_test.sh --days 1 --quick
+
+# 2. Then: Run content verification to analyze the data (1-2 minutes)
+poetry run python scripts/content_verification.py --database .test-workspace-*/data/data.db --days 1 --detailed
+
+# 3. Optional: Run performance validation (3-5 minutes)
+python3 scripts/quick_performance_test.py
+```
 
 ### Integration Testing
 
@@ -245,6 +270,49 @@ FROM conversations;
 # Export database for analysis
 sqlite3 ~/.fast-intercom-mcp/data.db .dump > db_dump.sql
 ```
+
+## Script and Testing Logging Standards
+
+### MANDATORY: All scripts must use proper logging infrastructure
+
+**Required logging setup for all test scripts:**
+
+```python
+import logging
+from fast_intercom_mcp.core.config import setup_logging
+
+# Set up enhanced logging (console + files)
+log_level = os.getenv("FASTINTERCOM_LOG_LEVEL", "INFO")
+setup_logging(log_level)
+
+logger = logging.getLogger(__name__)
+
+# Examples of proper logging:
+logger.info("Human-readable status message")         # Shows in console + files
+logger.debug("Detailed machine-readable data")       # Only in files (unless DEBUG level)
+logger.warning("Important notices for users")        # Shows in console + files
+logger.error("Error conditions")                     # Shows in console + error.log
+```
+
+**Log file structure** (automatic):
+- `main.log` - All levels (INFO, DEBUG, WARNING, ERROR)
+- `sync.log` - Sync-specific operations
+- `errors.log` - ERROR level only
+- Console output - Based on log level setting
+
+**Environment variables for logging:**
+```bash
+export FASTINTERCOM_LOG_LEVEL=DEBUG    # For detailed debugging
+export FASTINTERCOM_LOG_LEVEL=INFO     # For normal operation (default)
+export FASTINTERCOM_LOG_DIR=/path/to/logs  # Custom log directory
+```
+
+**Benefits:**
+- ✅ **Console AND file logging** simultaneously
+- ✅ **Human-readable INFO** for monitoring progress
+- ✅ **Machine-readable DEBUG** for troubleshooting
+- ✅ **Automatic log rotation** and management
+- ✅ **Test workspace isolation** (logs go to test dirs)
 
 ## Development Workflow
 

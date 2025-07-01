@@ -17,6 +17,8 @@ This directory contains all testing scripts for the FastIntercom MCP server. The
 - `run_integration_test.sh` - Main integration test runner with comprehensive API testing
 - `test_docker_install.sh` - Docker deployment and clean install testing
 - `test_mcp_tools.py` - MCP protocol tool testing and validation
+- `test_mcp_server.py` - Full MCP server protocol testing with JSON-RPC communication
+- `test_mcp_server_simple.py` - Simplified MCP server test for environments without MCP library
 
 ### Monitoring Scripts
 Note: Performance monitoring is integrated into the main integration test script.
@@ -308,6 +310,59 @@ python3 scripts/test_mcp_tools.py --verbose --output mcp_results.json
 
 # Test with custom timeout
 python3 scripts/test_mcp_tools.py --timeout 60
+```
+
+### test_mcp_server.py
+
+**Purpose**: Full MCP server protocol testing with JSON-RPC communication  
+**Usage**: `python3 scripts/test_mcp_server.py [OPTIONS]`
+
+**Features**:
+- Starts MCP server in stdio mode
+- Communicates using real MCP protocol (JSON-RPC)
+- Tests all available tools through the protocol
+- Validates responses against MCP specification
+- Provides detailed test results and debugging output
+
+**Options**:
+- `--workspace PATH` - Test workspace directory
+- `--verbose` - Enable verbose output with request/response details
+- `--help` - Show usage information
+
+**Examples**:
+```bash
+# Run MCP protocol tests
+python3 scripts/test_mcp_server.py
+
+# Run with verbose output for debugging
+python3 scripts/test_mcp_server.py --verbose
+
+# Use specific test workspace
+python3 scripts/test_mcp_server.py --workspace /tmp/mcp-test
+```
+
+### test_mcp_server_simple.py
+
+**Purpose**: Simplified MCP server test for environments without MCP library  
+**Usage**: `python3 scripts/test_mcp_server_simple.py [OPTIONS]`
+
+**Features**:
+- Tests basic server functionality without MCP library dependency
+- Validates server startup and basic operations
+- Checks database creation and structure
+- Designed for CI environments with minimal dependencies
+
+**Options**:
+- `--workspace PATH` - Test workspace directory
+- `--help` - Show usage information
+
+**Examples**:
+```bash
+# Run simple MCP tests
+python3 scripts/test_mcp_server_simple.py
+
+# Use specific test workspace
+python3 scripts/test_mcp_server_simple.py --workspace /tmp/mcp-test
 ```
 
 ### Performance Monitoring

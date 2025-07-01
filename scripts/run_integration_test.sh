@@ -9,6 +9,9 @@ SCRIPT_NAME="FastIntercom MCP Integration Test"
 SCRIPT_VERSION="1.0.0"
 START_TIME=$(date +%s)
 
+# Script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Default configuration
 DAYS=7
 # Note: The integration test syncs ALL conversations in the date range to properly test:
@@ -584,57 +587,79 @@ test_data_sync() {
 test_mcp_server() {
     log_section "Testing MCP Server"
     
-    log_info "Starting MCP server in test mode..."
+    log_info "Running MCP server protocol tests..."
     
-    # Start MCP server in background
-    # Configure logging for MCP server
-    FASTINTERCOM_LOG_DIR="$TEST_WORKSPACE/logs" FASTINTERCOM_LOG_FILE="$TEST_WORKSPACE/logs/mcp-server.log" \
-    $CLI_CMD start --test-mode > "$TEST_WORKSPACE/logs/server.log" 2>&1 &
-    SERVER_PID=$!
+    # Use the new MCP server test script for real protocol testing
+    local mcp_test_log="$TEST_WORKSPACE/logs/mcp_test.log"
+    local mcp_test_cmd="python3 $SCRIPT_DIR/test_mcp_server.py --workspace $TEST_WORKSPACE"
     
-    # Wait for server to start
-    sleep 3
-    
-    # Check if server is running
-    if ! kill -0 "$SERVER_PID" 2>/dev/null; then
-        log_error "MCP server failed to start"
-        cat "$TEST_WORKSPACE/logs/server.log" 2>/dev/null || true
-        TEST_RESULTS+=("mcp_server:FAILED")
-        return 1
+    if [[ "$VERBOSE" == "true" ]]; then
+        mcp_test_cmd="$mcp_test_cmd --verbose"
     fi
     
-    log_success "MCP server started (PID: $SERVER_PID)"
-    
-    # Test MCP tools (placeholder - would use actual MCP client)
-    log_info "Testing MCP tools..."
-    
-    # Simulate MCP tool tests
-    local tools_tested=0
-    local tools_passed=0
-    
-    # Test server status tool
-    if $CLI_CMD status > /dev/null 2>&1; then
-        tools_tested=$((tools_tested + 1))
-        tools_passed=$((tools_passed + 1))
-        log_success "Server status tool: PASSED"
+    # Try the full MCP protocol test first
+    if $mcp_test_cmd > "$mcp_test_log" 2>&1; then
+        # Extract test results from log
+        local summary_line=$(grep "MCP_TEST_SUMMARY:" "$mcp_test_log" | tail -1)
+        if [[ -n "$summary_line" ]]; then
+            # Parse summary: total=X, passed=Y, failed=Z, success_rate=N%
+            local passed=$(echo "$summary_line" | grep -o "passed=[0-9]*" | cut -d= -f2)
+            local total=$(echo "$summary_line" | grep -o "total=[0-9]*" | cut -d= -f2)
+            local success_rate=$(echo "$summary_line" | grep -o "success_rate=[0-9.]*%" | cut -d= -f2)
+            
+            log_success "MCP protocol test completed: $passed/$total tests passed ($success_rate)"
+            
+            if [[ "$passed" -eq "$total" ]]; then
+                TEST_RESULTS+=("mcp_server:PASSED:$passed")
+                return 0
+            else
+                TEST_RESULTS+=("mcp_server:FAILED:$passed/$total")
+                # Show last few lines of test output for debugging
+                log_warning "Some MCP tests failed. Last test output:"
+                tail -20 "$mcp_test_log" | while IFS= read -r line; do
+                    echo "  $line"
+                done
+                return 1
+            fi
+        else
+            # Couldn't parse results, show the log
+            log_error "Failed to parse MCP test results"
+            cat "$mcp_test_log"
+            TEST_RESULTS+=("mcp_server:FAILED")
+            return 1
+        fi
     else
-        tools_tested=$((tools_tested + 1))
-        log_error "Server status tool: FAILED"
-    fi
-    
-    # Additional tool tests would go here
-    # For now, we'll simulate successful tool tests
-    tools_tested=$((tools_tested + 3))
-    tools_passed=$((tools_passed + 3))
-    
-    log_success "MCP tools test: $tools_passed/$tools_tested tools passed"
-    
-    if [[ "$tools_passed" -eq "$tools_tested" ]]; then
-        TEST_RESULTS+=("mcp_server:PASSED:$tools_passed")
-        return 0
-    else
-        TEST_RESULTS+=("mcp_server:FAILED:$tools_passed/$tools_tested")
-        return 1
+        # If the full MCP test fails, check if it's due to missing dependencies
+        if grep -q "ModuleNotFoundError.*mcp" "$mcp_test_log" 2>/dev/null; then
+            log_warning "MCP library not available, falling back to simple test"
+            
+            # Try the simple test as fallback
+            local simple_test_cmd="python3 $SCRIPT_DIR/test_mcp_server_simple.py --workspace $TEST_WORKSPACE"
+            if $simple_test_cmd > "$mcp_test_log" 2>&1; then
+                # Check if all tests passed
+                if grep -q "✅ All tests passed!" "$mcp_test_log"; then
+                    log_success "Simple MCP test passed (basic functionality verified)"
+                    TEST_RESULTS+=("mcp_server:PASSED:simple")
+                    return 0
+                else
+                    log_error "Simple MCP test had failures"
+                    cat "$mcp_test_log"
+                    TEST_RESULTS+=("mcp_server:FAILED:simple")
+                    return 1
+                fi
+            else
+                log_error "Both MCP tests failed"
+                cat "$mcp_test_log"
+                TEST_RESULTS+=("mcp_server:FAILED")
+                return 1
+            fi
+        else
+            log_error "MCP protocol test failed"
+            # Show the full log for debugging
+            cat "$mcp_test_log"
+            TEST_RESULTS+=("mcp_server:FAILED")
+            return 1
+        fi
     fi
 }
 
