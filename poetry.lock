@@ -1188,6 +1188,21 @@ pytest = ">=4.6"
 testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtualenv"]
 
 [[package]]
+name = "pytest-timeout"
+version = "2.4.0"
+description = "pytest plugin to abort hanging tests"
+optional = false
+python-versions = ">=3.7"
+groups = ["dev"]
+files = [
+    {file = "pytest_timeout-2.4.0-py3-none-any.whl", hash = "sha256:c42667e5cdadb151aeb5b26d114aff6bdf5a907f176a007a30b940d3d865b5c2"},
+    {file = "pytest_timeout-2.4.0.tar.gz", hash = "sha256:7e68e90b01f9eff71332b25001f85c75495fc4e3a836701876183c4bcfd0540a"},
+]
+
+[package.dependencies]
+pytest = ">=7.0.0"
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
@@ -1873,4 +1888,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "e7eea625cc6eef9dc26b4580316035c3d06c5698a01b395578a38f6958e90397"
+content-hash = "400eb1fac4b1ac68314e876d9f1a5a58361d844ae0bab795871f7ca22c7fc71f"
