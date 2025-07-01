@@ -5,6 +5,7 @@ import contextlib
 import logging
 import sqlite3
 from datetime import datetime, timedelta
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -12,14 +13,16 @@ logger = logging.getLogger(__name__)
 class BackgroundSyncService:
     """Background sync service that runs inside the MCP server process."""
 
-    def __init__(self, db_manager, intercom_client, sync_interval_minutes: int = 15):
+    def __init__(
+        self, db_manager: Any, intercom_client: Any, sync_interval_minutes: int = 15
+    ) -> None:
         self.db = db_manager
         self.intercom_client = intercom_client
         self.sync_interval = timedelta(minutes=sync_interval_minutes)
         self.running = False
         self.sync_task: asyncio.Task | None = None
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the background sync service."""
         if self.running:
             return
