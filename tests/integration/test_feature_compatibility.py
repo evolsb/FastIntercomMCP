@@ -92,6 +92,9 @@ class TestFeatureCompatibility:
         # Mock fetch_conversations_incremental which is used by sync_recent
         async def mock_fetch_incremental(since):
             # Return SyncStats with conversations newer than 'since'
+            # Ensure timezone compatibility
+            if since.tzinfo is None:
+                since = since.replace(tzinfo=UTC)
             filtered_convs = [conv for conv in mock_conversations if conv.updated_at >= since]
             return SyncStats(
                 total_conversations=len(filtered_convs),
@@ -222,7 +225,7 @@ class TestFeatureCompatibility:
             # Now perform MCP queries while sync is running
 
             # Test 1: Search conversations (should work with existing data)
-            search_result = await mcp_server.server.call_tool(
+            search_result = await mcp_server._call_tool(
                 "search_conversations", {"query": "Initial message", "limit": 10}
             )
 
@@ -231,14 +234,14 @@ class TestFeatureCompatibility:
             assert "5 conversations found" in search_result[0].text
 
             # Test 2: Get server status (should show sync in progress)
-            status_result = await mcp_server.server.call_tool("get_server_status", {})
+            status_result = await mcp_server._call_tool("get_server_status", {})
 
             # Status should be available even during sync
             assert len(status_result) == 1
             assert "FastIntercom Server Status" in status_result[0].text
 
             # Test 3: Get specific conversation
-            conv_result = await mcp_server.server.call_tool(
+            conv_result = await mcp_server._call_tool(
                 "get_conversation", {"conversation_id": "initial_conv_0"}
             )
 
@@ -250,7 +253,7 @@ class TestFeatureCompatibility:
             await sync_task
 
             # Test 4: Search should now include synced conversations
-            search_all = await mcp_server.server.call_tool(
+            search_all = await mcp_server._call_tool(
                 "search_conversations", {"query": "message", "limit": 20}
             )
 
@@ -482,12 +485,13 @@ class TestFeatureCompatibility:
             sync_running.set()
             await asyncio.sleep(0.5)
             return SyncStats(
-                sync_id="test",
-                conversations_synced=0,
-                messages_synced=0,
-                sync_type="test",
-                started_at=datetime.now(UTC),
-                completed_at=datetime.now(UTC),
+                total_conversations=0,
+                new_conversations=0,
+                updated_conversations=0,
+                total_messages=0,
+                duration_seconds=0.5,
+                api_calls_made=1,
+                errors_encountered=0,
             )
 
         sync_service.sync_recent = mock_long_sync
@@ -497,7 +501,7 @@ class TestFeatureCompatibility:
 
         # Try MCP call during sync
         try:
-            result = await mcp_server.server.call_tool("get_server_status", {})
+            result = await mcp_server._call_tool("get_server_status", {})
             test_results["mcp_during_sync"] = len(result) > 0
         except Exception:
             test_results["mcp_during_sync"] = False
@@ -513,7 +517,7 @@ class TestFeatureCompatibility:
         sync_service.add_progress_callback(mcp_progress_callback)
 
         # Trigger sync via MCP
-        result = await mcp_server.server.call_tool("sync_conversations", {"force": False})
+        result = await mcp_server._call_tool("sync_conversations", {"force": False})
         test_results["progress_during_mcp"] = len(mcp_progress) > 0
 
         # Test 4: Concurrent MCP calls
@@ -545,12 +549,13 @@ class TestFeatureCompatibility:
         try:
             sync_service.sync_recent = AsyncMock(
                 return_value=SyncStats(
-                    sync_id="post_mcp",
-                    conversations_synced=1,
-                    messages_synced=0,
-                    sync_type="test",
-                    started_at=datetime.now(UTC),
-                    completed_at=datetime.now(UTC),
+                    total_conversations=1,
+                    new_conversations=1,
+                    updated_conversations=0,
+                    total_messages=0,
+                    duration_seconds=0.1,
+                    api_calls_made=1,
+                    errors_encountered=0,
                 )
             )
             stats = await sync_service.sync_recent()
@@ -766,7 +771,7 @@ class TestRealWorldScenarios:
                 ]
 
                 for tool_name, args in queries:
-                    result = await mcp_server.server.call_tool(tool_name, args)
+                    result = await mcp_server._call_tool(tool_name, args)
                     operation_log.append(
                         {
                             "time": f"{hour:02d}:30",

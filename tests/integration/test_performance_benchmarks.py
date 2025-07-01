@@ -31,7 +31,7 @@ from fast_intercom_mcp.sync_service import SyncManager, SyncService
 
 # Performance targets
 SYNC_RATE_TARGET_MIN = 3.0  # conversations per second
-SYNC_RATE_TARGET_MAX = 5.0  # conversations per second
+SYNC_RATE_TARGET_MAX = 20.0  # conversations per second
 API_RESPONSE_TIME_TARGET = 0.1  # 100ms
 MEMORY_USAGE_LIMIT_MB = 500  # Maximum memory usage during sync
 

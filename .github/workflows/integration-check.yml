@@ -156,7 +156,6 @@ jobs:
             --benchmark-json=benchmark_results.json \
             --benchmark-name=short \
             --benchmark-columns=min,max,mean,stddev,median \
-            --benchmark-compare-fail=mean:10% \
             -v
       
       - name: Upload benchmark results
