@@ -95,7 +95,7 @@ class StatusTracker:
         progress: dict[str, Any] | None = None,
         log_files: list[str] | None = None,
         **metadata,
-    ):
+    ) -> None:
         """Update an existing process with new information."""
         active_processes = self._load_active_processes()
 
@@ -110,7 +110,7 @@ class StatusTracker:
             self._save_active_processes(active_processes)
             self._update_summary()
 
-    def complete_process(self, process_id: str, status: str = "completed", **metadata):
+    def complete_process(self, process_id: str, status: str = "completed", **metadata) -> None:
         """Mark a process as completed and move it to completed processes."""
         active_processes = self._load_active_processes()
 
@@ -177,7 +177,7 @@ class StatusTracker:
 
         return all_processes[:limit]
 
-    def cleanup_old_processes(self, days_old: int = 7):
+    def cleanup_old_processes(self, days_old: int = 7) -> None:
         """Clean up completed processes older than specified days."""
         cutoff_time = datetime.now().timestamp() - (days_old * 24 * 60 * 60)
 
@@ -296,7 +296,7 @@ class StatusTracker:
             logger.warning(f"Error loading active processes: {e}")
             return {}
 
-    def _save_active_processes(self, processes: dict[str, dict[str, Any]]):
+    def _save_active_processes(self, processes: dict[str, dict[str, Any]]) -> None:
         """Save active processes to file."""
         try:
             with open(self.active_file, "w") as f:
@@ -316,7 +316,7 @@ class StatusTracker:
             logger.warning(f"Error loading completed processes: {e}")
             return {}
 
-    def _save_completed_processes(self, processes: dict[str, dict[str, Any]]):
+    def _save_completed_processes(self, processes: dict[str, dict[str, Any]]) -> None:
         """Save completed processes to file."""
         try:
             with open(self.completed_file, "w") as f:
@@ -324,13 +324,13 @@ class StatusTracker:
         except OSError as e:
             logger.error(f"Error saving completed processes: {e}")
 
-    def _update_active_process(self, status: ProcessStatus):
+    def _update_active_process(self, status: ProcessStatus) -> None:
         """Update a single active process."""
         active_processes = self._load_active_processes()
         active_processes[status.process_id] = asdict(status)
         self._save_active_processes(active_processes)
 
-    def _update_summary(self):
+    def _update_summary(self) -> None:
         """Update the status summary file."""
         summary = self.get_status_summary()
         try:
@@ -365,13 +365,13 @@ def update_process_tracking(
     progress: dict[str, Any] | None = None,
     log_files: list[str] | None = None,
     **metadata,
-):
+) -> None:
     """Update process tracking using the global status tracker."""
     tracker = get_status_tracker()
     tracker.update_process(process_id, progress, log_files, **metadata)
 
 
-def complete_process_tracking(process_id: str, status: str = "completed", **metadata):
+def complete_process_tracking(process_id: str, status: str = "completed", **metadata) -> None:
     """Complete process tracking using the global status tracker."""
     tracker = get_status_tracker()
     tracker.complete_process(process_id, status, **metadata)

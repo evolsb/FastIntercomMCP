@@ -90,8 +90,8 @@ class SyncStats:
     api_calls_made: int
     errors_encountered: int = 0
     # Per-date breakdown for detailed reporting
-    conversations_by_date: dict = None  # Dict[date, int] - conversations count by updated date
-    messages_by_date: dict = None  # Dict[date, int] - messages count by updated date
+    conversations_by_date: dict[str, int] | None = None  # conversations count by updated date
+    messages_by_date: dict[str, int] | None = None  # messages count by updated date
 
 
 @dataclass

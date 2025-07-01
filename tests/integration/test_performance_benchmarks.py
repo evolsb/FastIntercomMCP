@@ -320,8 +320,7 @@ class TestAPIPerformance:
         test_conversations = generate_test_conversations(1000, 30)
 
         # Store conversations in database
-        for conv in test_conversations:
-            db_manager.upsert_conversation(conv)
+        db_manager.store_conversations(test_conversations)
 
         # Create sync service
         sync_service = SyncService(db_manager, mock_intercom_client_performance)
@@ -538,8 +537,7 @@ class TestMemoryProfiling:
         for _ in range(5):
             # Generate and process data
             test_conversations = generate_test_conversations(1000, 7)
-            for conv in test_conversations:
-                db_manager.upsert_conversation(conv)
+            db_manager.store_conversations(test_conversations)
 
             # Force garbage collection
             gc.collect()
