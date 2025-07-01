@@ -101,9 +101,13 @@ class Config:
 
 
 def setup_logging(log_level: str = "INFO"):
-    """Setup logging configuration with enhanced 3-file structure."""
-    # Determine log directory - handle Docker environment
-    if os.getenv("FASTINTERCOM_DATA_DIR"):
+    """Setup logging configuration with enhanced 3-file structure and progress broadcasting."""
+    # Determine log directory - handle Docker environment and test workspaces
+    log_dir = None
+    if os.getenv("FASTINTERCOM_LOG_DIR"):
+        # Explicit log directory (used by tests and scripts)
+        log_dir = Path(os.getenv("FASTINTERCOM_LOG_DIR"))
+    elif os.getenv("FASTINTERCOM_DATA_DIR"):
         # Docker environment
         log_dir = Path(os.getenv("FASTINTERCOM_DATA_DIR")) / "logs"
     else:
@@ -118,7 +122,39 @@ def setup_logging(log_level: str = "INFO"):
     )
 
     try:
-        return setup_enhanced_logging(str(log_dir), log_level, enable_json)
+        result = setup_enhanced_logging(str(log_dir), log_level, enable_json)
+        
+        # Setup progress broadcasting if enabled
+        if os.getenv("FASTINTERCOM_PROGRESS_ENABLED", "").lower() in ("true", "1", "yes"):
+            try:
+                from .progress import setup_global_progress_broadcaster
+                
+                # Generate session ID for this process
+                import time
+                session_id = os.getenv("FASTINTERCOM_SESSION_ID", f"session-{int(time.time())}")
+                
+                progress_broadcaster = setup_global_progress_broadcaster(str(log_dir), session_id)
+                
+                # Configure based on environment
+                progress_broadcaster.console_enabled = not os.getenv("FASTINTERCOM_QUIET", "").lower() in ("true", "1", "yes")
+                
+                result["progress_broadcaster"] = progress_broadcaster
+                result["progress_enabled"] = True
+                
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Progress broadcasting enabled (session: {session_id})")
+                
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to setup progress broadcasting: {e}")
+                result["progress_enabled"] = False
+        else:
+            result["progress_enabled"] = False
+            
+        return result
+        
     except (PermissionError, OSError):
         # Fallback to basic logging if setup fails
         import logging
@@ -127,4 +163,4 @@ def setup_logging(log_level: str = "INFO"):
             level=getattr(logging, log_level.upper()),
             format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
         )
-        return {"log_dir": "console", "config": "basic"}
+        return {"log_dir": "console", "config": "basic", "progress_enabled": False}
