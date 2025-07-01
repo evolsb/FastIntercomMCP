@@ -16,6 +16,19 @@ from .sync.coordinator import TwoPhaseConfig, TwoPhaseSyncCoordinator
 
 logger = logging.getLogger(__name__)
 
+# Import progress broadcasting (optional, graceful fallback)
+try:
+    from .core.progress import (
+        get_progress_broadcaster,
+        start_operation,
+        update_progress,
+        complete_operation,
+        ProgressType
+    )
+    PROGRESS_AVAILABLE = True
+except ImportError:
+    PROGRESS_AVAILABLE = False
+
 
 class SyncService:
     """Manages background synchronization of Intercom conversations."""
@@ -309,24 +322,36 @@ class SyncService:
         is_background: bool = False,
         progress_callback: Callable[[int, int, float], None] = None,
     ) -> SyncStats:
-        """Sync all conversations in a specific time period."""
+        """Sync all conversations in a specific time period with enhanced progress broadcasting."""
         if self._sync_active and not is_background:
             raise Exception("Sync already in progress")
 
         self._sync_active = True
-        self._current_operation = (
-            f"Syncing {start_date.strftime('%m/%d')} to {end_date.strftime('%m/%d')}"
-        )
+        operation_name = f"Syncing {start_date.strftime('%m/%d')} to {end_date.strftime('%m/%d')}"
+        self._current_operation = operation_name
+
+        # Start operation with progress broadcasting
+        if PROGRESS_AVAILABLE:
+            start_operation(
+                "sync_period",
+                f"Conversation sync from {start_date.date()} to {end_date.date()}",
+                estimated_items=None  # Will be updated as we discover
+            )
 
         try:
             start_time = time.time()
             logger.info(f"Starting period sync: {start_date} to {end_date}")
 
-            # Skip the pre-count since it's misleading - the API returns inaccurate counts
-            # compared to what actually gets synced
+            # Broadcast initial progress 
             await self._broadcast_progress_simple(
                 f"🔄 Starting sync from {start_date.date()} to {end_date.date()}..."
             )
+            
+            if PROGRESS_AVAILABLE:
+                update_progress(
+                    f"Initializing sync for {start_date.date()} to {end_date.date()}",
+                    phase="initialization"
+                )
 
             # We'll track progress dynamically as we go
             total_estimated = 100  # Start with a conservative estimate
