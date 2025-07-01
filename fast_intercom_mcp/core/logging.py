@@ -12,7 +12,7 @@ from typing import Any
 class JSONFormatter(logging.Formatter):
     """Custom JSON formatter for structured logging."""
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
         log_data = {
             "timestamp": datetime.fromtimestamp(record.created).isoformat(),

@@ -52,7 +52,7 @@ class DatabaseManager:
 
         self._init_database()
 
-    def _init_database(self):
+    def _init_database(self) -> None:
         """Initialize database schema."""
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("PRAGMA foreign_keys = ON")
@@ -323,7 +323,7 @@ class DatabaseManager:
 
             conn.commit()
 
-    def _check_schema_compatibility(self, conn: sqlite3.Connection):
+    def _check_schema_compatibility(self, conn: sqlite3.Connection) -> None:
         """Check if existing database is compatible with current schema version."""
         try:
             # Check if schema_version table exists
@@ -367,7 +367,7 @@ class DatabaseManager:
             # On error, assume incompatible and reset
             self._backup_and_reset_database(conn)
 
-    def _backup_and_reset_database(self, conn: sqlite3.Connection):
+    def _backup_and_reset_database(self, conn: sqlite3.Connection) -> None:
         """Backup old database and reset for new schema."""
         logger.info(
             "Incompatible database schema detected. Creating backup and resetting database."
@@ -496,7 +496,7 @@ class DatabaseManager:
 
     def _store_messages(
         self, conn: sqlite3.Connection, messages: list[Message], conversation_id: str
-    ):
+    ) -> None:
         """Store messages for a conversation."""
         for msg in messages:
             conn.execute(
@@ -1089,7 +1089,7 @@ class DatabaseManager:
 
             conn.commit()
 
-    def mark_conversation_for_resync(self, conversation_id: str, reason: str = None) -> None:
+    def mark_conversation_for_resync(self, conversation_id: str, reason: str | None = None) -> None:
         """Mark a conversation as needing re-synchronization."""
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
@@ -1182,7 +1182,7 @@ class DatabaseManager:
                 ),
             }
 
-    def close(self):
+    def close(self) -> None:
         """Close database connections (for cleanup)."""
         # SQLite connections are closed automatically when using context managers
         pass
