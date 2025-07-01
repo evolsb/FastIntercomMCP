@@ -737,7 +737,7 @@ class TestRealWorldScenarios:
         # 4. Progress is monitored throughout
 
         db = DatabaseManager(db_path=temp_db)
-        await db.initialize()
+        # DatabaseManager initializes automatically in constructor
 
         intercom = Mock(spec=IntercomClient)
         intercom.app_id = "prod_app"
