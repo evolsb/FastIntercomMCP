@@ -453,7 +453,7 @@ class TestFeatureCompatibility:
         # Test 1: Sync with progress monitoring
         progress_received = False
 
-        def progress_callback(msg):
+        def progress_callback(_msg):
             nonlocal progress_received
             progress_received = True
 
@@ -591,7 +591,7 @@ class TestFeatureCompatibility:
             for i in range(20)
         ]
 
-        async def mock_search(**kwargs):
+        async def mock_search(**_kwargs):
             # Return results in batches
             for i in range(0, len(search_results), 10):
                 yield search_results[i : i + 10]

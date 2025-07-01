@@ -202,7 +202,7 @@ class TestSyncPerformance:
         metrics.start()
 
         # Define progress callback that handles both string and detailed formats
-        def progress_callback(*args, **kwargs):
+        def progress_callback(*_args, **_kwargs):
             metrics.record_operation()
 
         # Run sync
@@ -244,7 +244,7 @@ class TestSyncPerformance:
         metrics.start()
 
         # Define progress callback that handles both string and detailed formats
-        def progress_callback(*args, **kwargs):
+        def progress_callback(*_args, **_kwargs):
             metrics.record_operation()
 
         # Run sync
@@ -283,10 +283,10 @@ class TestSyncPerformance:
         # Track callback performance
         callback_times = []
 
-        def progress_callback(current: int, total: int, elapsed_seconds: float):
+        def progress_callback(current: int, _total: int, _elapsed_seconds: float):
             start = time.time()
             # Simulate some callback work
-            _ = f"Progress: {current}/{total} - {elapsed_seconds:.2f}s"
+            _ = f"Progress: {current}/{_total} - {_elapsed_seconds:.2f}s"
             callback_times.append(time.time() - start)
 
         # Run sync
@@ -492,7 +492,7 @@ class TestMemoryProfiling:
         # Track memory during sync
         memory_samples = []
 
-        def progress_callback(current: int, total: int, elapsed_seconds: float):
+        def progress_callback(current: int, _total: int, _elapsed_seconds: float):
             # Sample memory usage periodically
             if current % 100 == 0:
                 memory_samples.append(
