@@ -218,12 +218,12 @@ class TestSyncPerformance:
 
         # Assertions
         assert stats.total_conversations == 500
-        assert SYNC_RATE_TARGET_MIN <= metrics.operations_per_second <= SYNC_RATE_TARGET_MAX * 2, (
-            f"Sync rate {metrics.operations_per_second} conv/s outside target range"
-        )
-        assert metrics.memory_usage_mb < MEMORY_USAGE_LIMIT_MB, (
-            f"Memory usage {metrics.memory_usage_mb}MB exceeds limit"
-        )
+        assert (
+            SYNC_RATE_TARGET_MIN <= metrics.operations_per_second <= SYNC_RATE_TARGET_MAX * 2
+        ), f"Sync rate {metrics.operations_per_second} conv/s outside target range"
+        assert (
+            metrics.memory_usage_mb < MEMORY_USAGE_LIMIT_MB
+        ), f"Memory usage {metrics.memory_usage_mb}MB exceeds limit"
 
     async def test_sync_rate_30_days(self, performance_db, mock_intercom_client_performance):
         """Test sync rate for 30 days of data."""
@@ -260,12 +260,12 @@ class TestSyncPerformance:
 
         # Assertions
         assert stats.total_conversations == 2000
-        assert metrics.operations_per_second >= SYNC_RATE_TARGET_MIN, (
-            f"Sync rate {metrics.operations_per_second} conv/s below minimum target"
-        )
-        assert metrics.memory_usage_mb < MEMORY_USAGE_LIMIT_MB, (
-            f"Memory usage {metrics.memory_usage_mb}MB exceeds limit"
-        )
+        assert (
+            metrics.operations_per_second >= SYNC_RATE_TARGET_MIN
+        ), f"Sync rate {metrics.operations_per_second} conv/s below minimum target"
+        assert (
+            metrics.memory_usage_mb < MEMORY_USAGE_LIMIT_MB
+        ), f"Memory usage {metrics.memory_usage_mb}MB exceeds limit"
 
     async def test_sync_progress_monitoring(self, performance_db, mock_intercom_client_performance):
         """Test progress callback performance during sync."""
@@ -366,12 +366,12 @@ class TestAPIPerformance:
         print(f"\nSearch API Performance Report: {report}")
 
         # Assertions
-        assert metrics.avg_response_time < API_RESPONSE_TIME_TARGET, (
-            f"Average response time {metrics.avg_response_time * 1000:.2f}ms exceeds target"
-        )
-        assert metrics.p95_response_time < API_RESPONSE_TIME_TARGET * 2, (
-            f"P95 response time {metrics.p95_response_time * 1000:.2f}ms too high"
-        )
+        assert (
+            metrics.avg_response_time < API_RESPONSE_TIME_TARGET
+        ), f"Average response time {metrics.avg_response_time * 1000:.2f}ms exceeds target"
+        assert (
+            metrics.p95_response_time < API_RESPONSE_TIME_TARGET * 2
+        ), f"P95 response time {metrics.p95_response_time * 1000:.2f}ms too high"
 
     async def test_get_conversation_response_time(self, mcp_server):
         """Test get_conversation tool response time."""
@@ -396,9 +396,9 @@ class TestAPIPerformance:
         print(f"\nGet Conversation API Performance Report: {report}")
 
         # Assertions
-        assert metrics.avg_response_time < API_RESPONSE_TIME_TARGET, (
-            f"Average response time {metrics.avg_response_time * 1000:.2f}ms exceeds target"
-        )
+        assert (
+            metrics.avg_response_time < API_RESPONSE_TIME_TARGET
+        ), f"Average response time {metrics.avg_response_time * 1000:.2f}ms exceeds target"
 
     async def test_concurrent_request_handling(self, mcp_server):
         """Test API performance under concurrent load."""
@@ -441,9 +441,9 @@ class TestAPIPerformance:
         print(f"\nConcurrent Request Performance Report: {report}")
 
         # Assertions
-        assert metrics.avg_response_time < API_RESPONSE_TIME_TARGET * 2, (
-            "Average response time under load too high"
-        )
+        assert (
+            metrics.avg_response_time < API_RESPONSE_TIME_TARGET * 2
+        ), "Average response time under load too high"
         assert metrics.operations_per_second > 10, "Throughput too low under concurrent load"
 
     async def test_server_status_response_time(self, mcp_server):
@@ -468,9 +468,9 @@ class TestAPIPerformance:
         print(f"\nServer Status API Performance Report: {report}")
 
         # Assertions
-        assert metrics.avg_response_time < API_RESPONSE_TIME_TARGET / 2, (
-            f"Server status should be very fast, avg: {metrics.avg_response_time * 1000:.2f}ms"
-        )
+        assert (
+            metrics.avg_response_time < API_RESPONSE_TIME_TARGET / 2
+        ), f"Server status should be very fast, avg: {metrics.avg_response_time * 1000:.2f}ms"
 
 
 class TestMemoryProfiling:
