@@ -8,18 +8,15 @@ from .config import Config
 from .database import DatabaseManager
 from .intercom_client import IntercomClient
 from .mcp_server import FastIntercomMCPServer
-from .models import Conversation, ConversationFilters, Message, SyncStateException
-from .sync_service import SyncManager, SyncService
+from .models import Conversation, ConversationFilters, Message, SyncStats
 
 __all__ = [
     "DatabaseManager",
     "IntercomClient",
     "FastIntercomMCPServer",
-    "SyncService",
-    "SyncManager",
     "Config",
     "Conversation",
     "Message",
     "ConversationFilters",
-    "SyncStateException",
+    "SyncStats",
 ]

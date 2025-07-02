@@ -1,1 +1,1 @@
-"""Transport layer for optimized API communication."""
+"""Simplified transport layer for IntercomClient."""
