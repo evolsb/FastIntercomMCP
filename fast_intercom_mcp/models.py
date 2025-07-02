@@ -6,15 +6,6 @@ from typing import Any
 from urllib.parse import quote
 
 
-class SyncStateException(Exception):
-    """Exception raised when data sync state doesn't meet query requirements."""
-
-    def __init__(self, message: str, sync_state: str, last_sync: datetime | None = None):
-        super().__init__(message)
-        self.sync_state = sync_state  # 'stale', 'partial', or 'fresh'
-        self.last_sync = last_sync
-
-
 @dataclass
 class Message:
     """A message within an Intercom conversation."""
@@ -67,6 +58,18 @@ class SyncPeriod:
 
 
 @dataclass
+class SyncStats:
+    """Statistics from a sync operation."""
+    
+    total_conversations: int = 0
+    new_conversations: int = 0
+    updated_conversations: int = 0
+    total_messages: int = 0
+    duration_seconds: float = 0.0
+    api_calls_made: int = 0
+
+
+@dataclass
 class ConversationFilters:
     """Filters for searching conversations."""
 
@@ -78,35 +81,6 @@ class ConversationFilters:
     limit: int = 100
 
 
-@dataclass
-class SyncStats:
-    """Statistics about a sync operation."""
-
-    total_conversations: int
-    new_conversations: int
-    updated_conversations: int
-    total_messages: int
-    duration_seconds: float
-    api_calls_made: int
-    errors_encountered: int = 0
-    # Per-date breakdown for detailed reporting
-    conversations_by_date: dict = None  # Dict[date, int] - conversations count by updated date
-    messages_by_date: dict = None  # Dict[date, int] - messages count by updated date
-
-
-@dataclass
-class ServerStatus:
-    """Overall server status information."""
-
-    is_running: bool
-    database_size_mb: float
-    total_conversations: int
-    total_messages: int
-    last_sync: datetime | None
-    background_sync_active: bool
-    uptime_seconds: float | None = None
-    mcp_requests_served: int = 0
-    average_response_time_ms: float = 0.0
 
 
 @dataclass

@@ -11,7 +11,6 @@ import pytest
 from fast_intercom_mcp.database import DatabaseManager
 from fast_intercom_mcp.intercom_client import IntercomClient
 from fast_intercom_mcp.models import Conversation, Message, SyncStats
-from fast_intercom_mcp.sync_service import SyncService
 
 
 @pytest.fixture
@@ -145,12 +144,7 @@ def mock_intercom_client(test_conversations):
     return client
 
 
-@pytest.fixture
-def sync_service(database_manager, mock_intercom_client):
-    """Provide a SyncService instance for testing."""
-    service = SyncService(database_manager, mock_intercom_client)
-    yield service
-    # Note: No cleanup needed for unit tests as service doesn't start background tasks
+# Removed sync_service fixture as SyncService is not part of simplified architecture
 
 
 @pytest.fixture
